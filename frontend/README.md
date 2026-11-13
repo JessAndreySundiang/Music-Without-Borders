@@ -27,8 +27,10 @@
                                     Eloquent ORM
                                           |
                                           v
-                              [ SQLite Database Engine ]
-                              database/database.sqlite
+                              [ XAMPP MySQL Database ]
+                               (community_band_db)
+                              Viewable via phpMyAdmin
+                             http://localhost/phpmyadmin
 ```
 
 ---
