@@ -20,15 +20,15 @@ function token(name: string, fallback: string): string {
  */
 export function buildStripeAppearance(theme: Theme): Appearance {
   const dark = theme === "dark";
-  const ink = token("--ink", dark ? "#f3f7ff" : "#0d1b34");
-  const surface = token("--surface", dark ? "#131e37" : "#fffdf8");
-  const paper = token("--paper", dark ? "#080f1f" : "#f8f2e6");
-  const line = token("--line", dark ? "rgba(232,237,248,0.14)" : "rgba(13,27,52,0.14)");
-  const muted = token("--muted", dark ? "#a3b0c9" : "#55607a");
-  const brass = token("--brass", dark ? "#e9ba55" : "#8a5f12");
-  const brassBright = token("--brass-bright", dark ? "#e0a92e" : "#c9962b");
-  const plume = token("--plume", dark ? "#ff8a74" : "#a63a22");
-  const ring = dark ? "rgba(224,169,46,0.35)" : "rgba(201,150,43,0.25)";
+  const ink = token("--ink", dark ? "#f7f9fd" : "#12203a");
+  const surface = token("--surface", dark ? "#142035" : "#fffcf6");
+  const paper = token("--paper", dark ? "#070d19" : "#f6f1e7");
+  const line = token("--line", dark ? "rgba(230,237,249,0.14)" : "rgba(18,32,58,0.14)");
+  const muted = token("--muted", dark ? "#a5b1c6" : "#59657c");
+  const brass = token("--brass", dark ? "#e7be67" : "#75510c");
+  const brassBright = token("--brass-bright", dark ? "#e0a92e" : "#d8a63a");
+  const plume = token("--plume", dark ? "#ff9b85" : "#9e3f2f");
+  const ring = dark ? "rgba(224,169,46,0.35)" : "rgba(117,81,12,0.25)";
 
   return {
     theme: dark ? "night" : "stripe",

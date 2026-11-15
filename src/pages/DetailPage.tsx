@@ -10,16 +10,19 @@ import {
   IconAlert,
   IconHeart,
 } from "../components/Icons";
+import SampleNotice from "../components/cms/SampleNotice";
 import { fetchPerformanceById } from "../lib/api";
-import { eventDateParts } from "../lib/events";
-import { usePageTitle } from "../lib/usePageTitle";
+import { eventDateParts, formatTime } from "../lib/events";
+import { usePageMeta } from "../lib/usePageTitle";
 import type { Performance } from "../types/Performance";
 
 const eventTypeColors: Record<string, string> = {
   Concert: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
   Parade: "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  "Outdoor Festival": "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  "Community Outreach": "border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300",
+  "Outdoor Festival":
+    "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  "Community Outreach":
+    "border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300",
   "Charity Gala": "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300",
 };
 
@@ -29,21 +32,28 @@ export function DetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  usePageTitle(performance ? performance.title : "Performance Details");
+  usePageMeta({
+    page: "performances",
+    fallbackTitle: "Performance Details",
+    title: performance?.title ?? "Performance Details",
+    description: performance?.description,
+  });
 
   useEffect(() => {
     if (!id) return;
 
     let isMounted = true;
-    setLoading(true);
-    setError(null);
 
     fetchPerformanceById(id)
       .then((data) => {
-        if (isMounted) setPerformance(data);
+        if (isMounted) {
+          setPerformance(data);
+          setError(null);
+        }
       })
       .catch((err) => {
         if (isMounted) {
+          setPerformance(null);
           setError(err instanceof Error ? err.message : "Failed to load performance details");
         }
       })
@@ -55,6 +65,10 @@ export function DetailPage() {
       isMounted = false;
     };
   }, [id]);
+
+  // If the route changes while the previous record is still in state, keep the
+  // loading state until the new record arrives instead of showing stale details.
+  const isLoading = loading || (performance !== null && String(performance.id) !== id);
 
   const dateParts = performance ? eventDateParts(performance.performance_date) : null;
   const badgeColor =
@@ -89,22 +103,26 @@ export function DetailPage() {
           </div>
 
           {/* Loading Hero */}
-          {loading && (
+          {isLoading && (
             <div className="py-16 text-center">
               <IconSpinner className="size-10 animate-spin text-brass mx-auto" />
-              <p className="mt-4 font-serif text-lg text-stage-fg">Loading performance details...</p>
-              <p className="text-xs text-stage-muted">Querying Laravel API for Performance #{id}</p>
+              <p className="mt-4 font-serif text-lg text-stage-fg">Loading performance details…</p>
+              <p className="text-xs text-stage-muted">
+                Getting the latest information for this event.
+              </p>
             </div>
           )}
 
           {/* Error Hero */}
-          {!loading && error && (
+          {!isLoading && error && (
             <div className="mt-8 rounded-3xl border border-rose-500/30 bg-rose-500/10 p-8 text-center max-w-xl">
               <IconAlert className="size-10 text-rose-500 mx-auto" />
               <h2 className="mt-4 font-serif text-2xl font-bold text-stage-fg">
                 Performance Not Found
               </h2>
-              <p className="mt-2 text-sm text-stage-muted">{error}</p>
+              <p className="mt-2 text-sm text-stage-muted">
+                We couldn’t find that performance. It may have been moved or removed.
+              </p>
               <div className="mt-6 flex justify-center gap-3">
                 <Link
                   to="/"
@@ -123,12 +141,12 @@ export function DetailPage() {
           )}
 
           {/* Loaded Performance Header */}
-          {!loading && performance && (
+          {!isLoading && performance && (
             <div className="mt-8">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-stage-line-strong bg-stage-glass-strong px-3 py-1 text-xs font-bold uppercase tracking-wider text-tile-fg backdrop-blur-sm">
                   <IconSparkle className="size-3.5" />
-                  CMS Record #{performance.id}
+                  Community Event
                 </span>
                 <span
                   className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${badgeColor}`}
@@ -151,9 +169,10 @@ export function DetailPage() {
       </section>
 
       {/* Main Details Body */}
-      {!loading && performance && (
+      {!isLoading && performance && (
         <section className="band bg-paper">
           <div className="mx-auto w-full max-w-6xl px-5 py-12 md:py-16">
+            <SampleNotice className="mb-8" />
             <div className="grid gap-10 lg:grid-cols-[1.5fr_1fr]">
               {/* Left Column: Full Description & Overview */}
               <div className="space-y-8">
@@ -168,10 +187,10 @@ export function DetailPage() {
                   <div className="mt-6 border-t border-line/60 pt-6">
                     <h3 className="font-serif text-lg font-semibold text-ink">Concert Admission</h3>
                     <p className="mt-2 text-sm text-muted">
-                      Admission to all Community Music Band performances is completely free of charge. No
-                      tickets or reservations are required. Seating is general admission on a first-come,
-                      first-served basis. Families with children of all ages are warmly encouraged to
-                      attend.
+                      Admission to all Community Music Band performances is completely free of
+                      charge. No tickets or reservations are required. Seating is general admission
+                      on a first-come, first-served basis. Families with children of all ages are
+                      warmly encouraged to attend.
                     </p>
                   </div>
                 </div>
@@ -189,7 +208,9 @@ export function DetailPage() {
                       <p className="mt-1 font-serif text-xl font-bold text-ink">
                         {performance.duration_minutes} Minutes
                       </p>
-                      <p className="mt-0.5 text-xs text-muted">Includes intermission where applicable</p>
+                      <p className="mt-0.5 text-xs text-muted">
+                        Includes intermission where applicable
+                      </p>
                     </div>
 
                     <div className="rounded-2xl border border-line/50 bg-paper p-4">
@@ -206,7 +227,9 @@ export function DetailPage() {
                       <span className="text-xs font-bold uppercase tracking-wider text-muted">
                         Location
                       </span>
-                      <p className="mt-1 font-serif text-xl font-bold text-ink">{performance.city}</p>
+                      <p className="mt-1 font-serif text-xl font-bold text-ink">
+                        {performance.city}
+                      </p>
                       <p className="mt-0.5 text-xs text-muted">Municipal Regional Area</p>
                     </div>
 
@@ -241,7 +264,9 @@ export function DetailPage() {
                         </span>
                       </div>
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-muted">Date</p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-muted">
+                          Date
+                        </p>
                         <p className="font-serif text-base font-semibold text-ink">
                           {performance.performance_date}
                         </p>
@@ -254,7 +279,9 @@ export function DetailPage() {
                         <IconMapPin className="size-6" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-muted">Venue</p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-muted">
+                          Venue
+                        </p>
                         <p className="font-serif text-base font-semibold text-ink">
                           {performance.venue}
                         </p>
@@ -277,17 +304,20 @@ export function DetailPage() {
                       </div>
                     </div>
 
-                    {/* Duration */}
+                    {/* Start time */}
                     <div className="flex items-start gap-4">
                       <div className="grid size-12 shrink-0 place-items-center rounded-xl border border-line bg-paper text-brass">
                         <IconClock className="size-6" />
                       </div>
                       <div>
                         <p className="text-xs font-bold uppercase tracking-wider text-muted">
-                          Estimated Duration
+                          Start Time
                         </p>
                         <p className="font-serif text-base font-semibold text-ink">
-                          {performance.duration_minutes} minutes
+                          {formatTime(performance.start_time) || "To be announced"}
+                        </p>
+                        <p className="text-xs text-muted">
+                          {performance.duration_minutes} minutes long
                         </p>
                       </div>
                     </div>

@@ -6,7 +6,9 @@ import tseslint from "typescript-eslint";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
-  globalIgnores(["dist", "server/data"]),
+  // `frontend/` is a legacy duplicate app kept for now; the root app is canonical.
+  // Ignoring it here keeps CI focused on the code that is actually deployed.
+  globalIgnores(["dist", "frontend", "backend/vendor", "server/data"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [

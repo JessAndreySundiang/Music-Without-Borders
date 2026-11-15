@@ -9,13 +9,20 @@ class PerformanceController extends Controller
 {
     public function index()
     {
-        $performances = Performance::orderBy('performance_date')->get();
+        $performances = Performance::query()
+            ->published()
+            ->orderBy('performance_date')
+            ->orderBy('start_time')
+            ->orderBy('id')
+            ->get();
 
         return PerformanceResource::collection($performances);
     }
 
     public function show(Performance $performance)
     {
+        abort_unless($performance->is_published, 404);
+
         return new PerformanceResource($performance);
     }
 }

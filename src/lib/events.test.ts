@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { eventDateParts, localIsoDate, nextUpcomingEvent } from "./events";
+import { eventDateParts, formatTime, localIsoDate, nextUpcomingEvent } from "./events";
 
 /** Deliberately out of order, to prove the helper does not trust the array. */
 const events = [
@@ -15,6 +15,25 @@ describe("eventDateParts", () => {
 
   it.each(["", "November 8", "2026-11", "2026-13-01", "2026-11-32"])("rejects %o", (date) => {
     expect(eventDateParts(date)).toBeNull();
+  });
+});
+
+describe("formatTime", () => {
+  it.each([
+    ["16:00", "4:00 PM"],
+    ["09:05", "9:05 AM"],
+    ["00:30", "12:30 AM"],
+    ["12:00", "12:00 PM"],
+  ])("formats %s as %s", (input, expected) => {
+    expect(formatTime(input)).toBe(expected);
+  });
+
+  it("returns an empty string for a missing time", () => {
+    expect(formatTime(null)).toBe("");
+  });
+
+  it("leaves an unexpected format alone", () => {
+    expect(formatTime("evening")).toBe("evening");
   });
 });
 

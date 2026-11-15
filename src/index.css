@@ -9,79 +9,79 @@
  * `bg-paper`, `text-body`, `border-line`, `text-brass`.
  * ------------------------------------------------------------------ */
 :root {
-  /* Daytime: warm parchment so white cards separate clearly. */
-  --paper: #f8f2e6;
-  --paper-2: #f0e6d3;
-  --surface: #fffdf8;
-  --ink: #0d1b34;
-  --body: #1c2540;
-  --muted: #55607a;
-  --line: rgba(13, 27, 52, 0.14);
-  --brass: #8a5f12;
-  --brass-bright: #c9962b;
-  --plume: #a63a22;
+  /* Daytime: warm ivory with cool navy text and restrained brass accents. */
+  --paper: #f6f1e7;
+  --paper-2: #ece3d3;
+  --surface: #fffcf6;
+  --ink: #12203a;
+  --body: #26344e;
+  --muted: #59657c;
+  --line: rgba(18, 32, 58, 0.14);
+  --brass: #75510c;
+  --brass-bright: #d8a63a;
+  --plume: #9e3f2f;
 
   /* Floating nav surfaces (must flip with the theme, so they are tokens). */
-  --nav: rgb(255 255 255 / 0.85);
-  --nav-line: rgb(13 27 52 / 0.12);
-  --nav-hover: rgb(13 27 52 / 0.06);
+  --nav: rgb(255 252 246 / 0.88);
+  --nav-line: rgb(18 32 58 / 0.12);
+  --nav-hover: rgb(18 32 58 / 0.06);
 
   /* Ambient wash used by .band / .band-tint (light mode only). */
-  --band-a: rgb(201 150 43 / 0.1);
-  --band-b: rgb(207 81 56 / 0.06);
+  --band-a: rgb(216 166 58 / 0.1);
+  --band-b: rgb(158 63 47 / 0.055);
 
   /* Daytime "stage": a warm golden-hour hero instead of the navy one. */
-  --stage-fg: #0d1b34;
-  --stage-muted: rgb(13 27 52 / 0.7);
-  --stage-line: rgb(13 27 52 / 0.1);
-  --stage-line-strong: rgb(13 27 52 / 0.18);
+  --stage-fg: #12203a;
+  --stage-muted: rgb(18 32 58 / 0.72);
+  --stage-line: rgb(18 32 58 / 0.1);
+  --stage-line-strong: rgb(18 32 58 / 0.18);
   --stage-glass: rgb(255 255 255 / 0.5);
-  --stage-glass-strong: rgb(255 255 255 / 0.66);
-  --stage-hover: rgb(255 255 255 / 0.88);
-  --stage-ring: rgb(138 95 18 / 0.28);
-  --stage-staff: rgb(13 27 52 / 0.1);
-  --stage-glow-a: rgb(224 169 46 / 0.18);
-  --stage-glow-b: rgb(198 106 65 / 0.11);
-  --stage-grad-from: #faf3e2;
-  --stage-grad-mid: #f3e7cd;
-  --stage-grad-to: #e9d4aa;
+  --stage-glass-strong: rgb(255 255 255 / 0.68);
+  --stage-hover: rgb(255 255 255 / 0.9);
+  --stage-ring: rgb(117 81 12 / 0.28);
+  --stage-staff: rgb(18 32 58 / 0.1);
+  --stage-glow-a: rgb(216 166 58 / 0.2);
+  --stage-glow-b: rgb(158 63 47 / 0.1);
+  --stage-grad-from: #fbf5e8;
+  --stage-grad-mid: #f3e8d4;
+  --stage-grad-to: #e7d3ae;
 
   /* Hero medallion: ivory in Daytime so the gold logo disc reads. */
   --medal-from: #fffdf6;
-  --medal-to: #f8f0df;
-  --medal-ring: rgb(138 95 18 / 0.35);
-  --medal-glow: rgb(224 169 46 / 0.22);
+  --medal-to: #f8efdc;
+  --medal-ring: rgb(117 81 12 / 0.35);
+  --medal-glow: rgb(216 166 58 / 0.24);
 
-  --tile: rgb(201 150 43 / 0.16);
-  --tile-2: rgb(201 150 43 / 0.06);
-  --tile-line: rgb(138 95 18 / 0.22);
-  --tile-fg: #8a5f12;
+  --tile: rgb(216 166 58 / 0.16);
+  --tile-2: rgb(216 166 58 / 0.06);
+  --tile-line: rgb(117 81 12 / 0.22);
+  --tile-fg: #75510c;
 
-  --feature: #f7ecd5;
-  --feature-fg: #0d1b34;
-  --feature-muted: rgb(13 27 52 / 0.62);
+  --feature: #f4ead7;
+  --feature-fg: #12203a;
+  --feature-muted: rgb(18 32 58 / 0.64);
 
-  --title-from: #8a5f12;
-  --title-to: #c9962b;
+  --title-from: #75510c;
+  --title-to: #946009;
 
-  --sm-strong: #b9821a;
-  --sm-soft: #d9a83c;
+  --sm-strong: #a56f0e;
+  --sm-soft: #d8a63a;
   --sm-glow: 0.16;
 }
 
 [data-theme="dark"] {
-  --paper: #080f1f;
-  --paper-2: #0e1729;
-  --surface: #131e37;
-  --ink: #f3f7ff;
-  --body: #e6ecf8;
-  --muted: #a3b0c9;
-  --line: rgba(232, 237, 248, 0.14);
-  --brass: #e9ba55;
+  --paper: #070d19;
+  --paper-2: #0d1626;
+  --surface: #142035;
+  --ink: #f7f9fd;
+  --body: #e4eaf4;
+  --muted: #a5b1c6;
+  --line: rgba(230, 237, 249, 0.14);
+  --brass: #e7be67;
   --brass-bright: #e0a92e;
-  --plume: #ff8a74;
+  --plume: #ff9b85;
 
-  --nav: rgb(5 8 15 / 0.72);
+  --nav: rgb(4 8 15 / 0.78);
   --nav-line: rgb(255 255 255 / 0.1);
   --nav-hover: rgb(255 255 255 / 0.1);
 
@@ -89,9 +89,9 @@
   --band-a: transparent;
   --band-b: transparent;
 
-  /* Evening "stage": the original deep concert navy. */
+  /* Evening "stage": the deep concert navy. */
   --stage-fg: #ffffff;
-  --stage-muted: rgb(255 255 255 / 0.7);
+  --stage-muted: rgb(255 255 255 / 0.72);
   --stage-line: rgb(255 255 255 / 0.1);
   --stage-line-strong: rgb(255 255 255 / 0.25);
   --stage-glass: rgb(255 255 255 / 0.02);
@@ -100,28 +100,28 @@
   --stage-ring: rgb(252 211 77 / 0.25);
   --stage-staff: rgb(255 255 255 / 0.07);
   --stage-glow-a: rgb(224 169 46 / 0.3);
-  --stage-glow-b: rgb(43 88 150 / 0.55);
-  --stage-grad-from: #05080f;
-  --stage-grad-mid: #0a1428;
-  --stage-grad-to: #0e2038;
+  --stage-glow-b: rgb(43 88 150 / 0.5);
+  --stage-grad-from: #060b15;
+  --stage-grad-mid: #0b1528;
+  --stage-grad-to: #10233b;
 
-  /* Hero medallion: the original brass medallion in Evening. */
+  /* Hero medallion: the brass medallion in Evening. */
   --medal-from: #fcd34d;
   --medal-to: #f59e0b;
   --medal-ring: rgb(255 255 255 / 0.15);
   --medal-glow: rgb(224 169 46 / 0.7);
 
-  --tile: #080f1f;
-  --tile-2: #22355c;
+  --tile: #070d19;
+  --tile-2: #213252;
   --tile-line: rgb(255 255 255 / 0.1);
-  --tile-fg: #e0a92e;
+  --tile-fg: #e8bd62;
 
-  --feature: #080f1f;
+  --feature: #0a1424;
   --feature-fg: #ffffff;
-  --feature-muted: rgb(255 255 255 / 0.6);
+  --feature-muted: rgb(255 255 255 / 0.64);
 
   --title-from: #fde9b8;
-  --title-to: #fbbf24;
+  --title-to: #e8b648;
 
   --sm-strong: #e0a92e;
   --sm-soft: #f4d488;
@@ -148,6 +148,7 @@
   --color-paper-2: var(--paper-2);
   --color-surface: var(--surface);
   --color-ink: var(--ink);
+  --color-body: var(--body);
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-brass: var(--brass);

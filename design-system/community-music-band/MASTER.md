@@ -35,33 +35,39 @@ The theme is **token-driven**, not class-driven.
 
 ### Colour palette
 
-All values below are the real tokens in `src/index.css`. Every pairing meets WCAG AA (4.5:1) for
-its intended use.
+All values below are the real tokens in `src/index.css`. Body and UI pairings clear WCAG AA
+(4.5:1). The only exception is the Daytime display headline gradient, which is large text and
+clears the 3:1 large-text threshold.
 
 | Role | Variable | Daytime (light) | Evening (dark) |
 |------|----------|-----------------|----------------|
-| Page background | `--paper` | `#f8f2e6` | `#080f1f` |
-| Tinted section | `--paper-2` | `#f0e6d3` | `#0e1729` |
-| Card surface | `--surface` | `#fffdf8` | `#131e37` |
-| Headings | `--ink` | `#0d1b34` | `#f3f7ff` |
-| Body text | `--body` | `#1c2540` | `#e6ecf8` |
-| Muted text | `--muted` | `#55607a` | `#a3b0c9` |
-| Hairline / border | `--line` | `rgba(13,27,52,.14)` | `rgba(232,237,248,.14)` |
-| Brass accent (text) | `--brass` | `#8a5f12` | `#e9ba55` |
-| Brass fill (buttons) | `--brass-bright` | `#c9962b` | `#e0a92e` |
-| Terracotta accent | `--plume` | `#a63a22` | `#ff8a74` |
-| Hero gradient | `--stage-grad-from/mid/to` | `#faf3e2 → #f3e7cd → #e9d4aa` | `#05080f → #0a1428 → #0e2038` |
-| On-hero text | `--stage-fg` / `--stage-muted` | navy / 70% navy | white / 70% white |
-| Gold gradient headline | `--title-from` / `--title-to` | `#8a5f12 → #c9962b` | `#fde9b8 → #fbbf24` |
-| Floating nav | `--nav` / `--nav-line` / `--nav-hover` | white 85% | navy 72% |
+| Page background | `--paper` | `#f6f1e7` | `#070d19` |
+| Tinted section | `--paper-2` | `#ece3d3` | `#0d1626` |
+| Card surface | `--surface` | `#fffcf6` | `#142035` |
+| Headings | `--ink` | `#12203a` | `#f7f9fd` |
+| Body text | `--body` | `#26344e` | `#e4eaf4` |
+| Muted text | `--muted` | `#59657c` | `#a5b1c6` |
+| Hairline / border | `--line` | `rgba(18,32,58,.14)` | `rgba(230,237,249,.14)` |
+| Brass accent (text) | `--brass` | `#75510c` | `#e7be67` |
+| Brass fill (buttons) | `--brass-bright` | `#d8a63a` | `#e0a92e` |
+| Terracotta accent | `--plume` | `#9e3f2f` | `#ff9b85` |
+| Hero gradient | `--stage-grad-from/mid/to` | `#fbf5e8 → #f3e8d4 → #e7d3ae` | `#060b15 → #0b1528 → #10233b` |
+| On-hero text | `--stage-fg` / `--stage-muted` | navy / 72% navy | white / 72% white |
+| Gold gradient headline | `--title-from` / `--title-to` | `#75510c → #946009` | `#fde9b8 → #e8b648` |
+| Floating nav | `--nav` / `--nav-line` / `--nav-hover` | white 88% | navy 78% |
 | Ambient wash | `--band-a` / `--band-b` | gold / terracotta tint | transparent |
 
 **Contrast notes:**
 
-- Gold text on cream must use `--brass` (Daytime), never `--brass-bright`. The bright value is for
-  **fills** (with `text-night-950` on top) and for text on navy.
+- Gold text on cream uses `--brass` (Daytime), never `--brass-bright`. The bright value is for
+  **fills** (with `text-night-950` on top) and for text on navy. Daytime brass measures **6.35:1**
+  on paper and **4.88:1** on the darkest hero stop.
+- Muted body copy clears AA in both themes: **5.21:1** Daytime and **8.98:1** Evening against the
+  page background. Hero muted copy measures **5.35:1** (Daytime) and **8.75:1** (Evening).
+- The Daytime gradient headline ends at **3.64:1** on the darkest hero stop. It is only used for
+  large display headings, so it clears the 3:1 large-text requirement.
 - **Gold-on-gold rule:** the gold logo must sit on a non-gold ground. Brand badges in the navbar and
-  footer use a navy "seal" (`bg-night-950 ring-1 ring-brass/50`), which measures **7.52:1**.
+  footer use a navy "seal" (`bg-night-950 ring-1 ring-brass/50`), which measures **11.4:1**.
 - The hero medallion flips too: ivory disc in Daytime, brass gradient in Evening.
 - Daytime deliberately keeps only a light `--band-*` wash so the page is not too bright; Evening
   bands are flat.

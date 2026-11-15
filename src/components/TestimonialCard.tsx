@@ -1,8 +1,10 @@
 import { IconQuote } from "./Icons";
 import type { Testimonial } from "../data/landing";
 
-function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
-  const { quote, name, role, initials } = testimonial;
+type TestimonialCardData = Testimonial & { imageUrl?: string | null };
+
+function TestimonialCard({ testimonial }: { testimonial: TestimonialCardData }) {
+  const { quote, name, role, initials, imageUrl } = testimonial;
 
   return (
     <figure className="flex h-full flex-col rounded-2xl border border-line bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brass/50 hover:shadow-xl">
@@ -11,8 +13,12 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
         {quote}
       </blockquote>
       <figcaption className="mt-auto flex items-center gap-3 pt-5">
-        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-tile font-serif text-sm text-tile-fg border border-tile-line">
-          {initials}
+        <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-full border border-tile-line bg-tile font-serif text-sm text-tile-fg">
+          {imageUrl ? (
+            <img src={imageUrl} alt="" className="size-full object-cover" loading="lazy" />
+          ) : (
+            initials
+          )}
         </span>
         <span>
           <span className="block text-sm font-bold text-ink">{name}</span>

@@ -33,6 +33,9 @@
                              http://localhost/phpmyadmin
 ```
 
+The same API also serves `/api/home`, `/api/about`, and `/api/settings` for CMS-managed page copy,
+settings, events, and testimonials.
+
 ---
 
 ## 🚀 Quick Start & Installation (For Video Demo)
@@ -49,8 +52,11 @@ composer install
 cp .env.example .env
 php artisan key:generate
 
-# Execute migrations and seed 2026 performances data
-php artisan migrate
+# Execute migrations and seed the CMS content
+php artisan migrate --seed
+
+# Create the administrator account and write a one-time setup link
+php artisan admin:setup-link
 
 # Start the Laravel headless REST API
 php artisan serve
@@ -59,9 +65,7 @@ php artisan serve
 
 ### 2. Frontend Setup (React + TypeScript — Port 5173)
 ```bash
-# In a new terminal, navigate to frontend (or project root)
-cd frontend
-
+# In a new terminal, stay in the project root (the canonical app)
 # Install node dependencies
 npm install
 
@@ -76,20 +80,64 @@ npm run dev
 
 | Method | Endpoint | Description | Response Type |
 |---|---|---|---|
-| `GET` | `/api/performances` | Returns all 2026 performances sorted by date | JSON collection (`{ data: [...] }`) |
-| `GET` | `/api/performances/{id}` | Returns full details for a specific performance | JSON resource (`{ data: {...} }`) |
+| `GET` | `/api/home` | Returns ordered home sections and items, server-hydrated events/testimonial records, and the next published performance | JSON page (`{ data: { page, sections, next_performance } }`) |
+| `GET` | `/api/about` | Returns ordered About page sections and items | JSON page (`{ data: { page, sections } }`) |
+| `GET` | `/api/settings` | Returns public site settings as a flat key/value map | JSON object (`{ data: { "site.name": "..." } }`) |
+| `GET` | `/api/performances` | Returns published, non-deleted performances sorted by date and start time | JSON collection (`{ data: [...] }`) |
+| `GET` | `/api/performances/{id}` | Returns full details for a published performance | JSON resource (`{ data: {...} }`) |
+| `GET` | `/api/stories` | Returns published, non-deleted Stories sorted newest first | JSON collection (`{ data: [...] }`) |
+| `GET` | `/api/stories/{slug}` | Returns one published Story by slug | JSON resource (`{ data: {...} }`) |
+
+Page text, FAQ, and timeline content live in `home_sections` / `home_section_items` and
+`about_us_sections` / `about_us_section_items`. Contact details, rehearsal times, social links,
+and SEO metadata live in `site_settings`. Testimonials and performances have their own tables and
+soft deletes. The public API only returns visible/published content.
+
+### Admin CMS, Stories, and password resets
+
+- The in-site CMS lives at `/admin`. The administrator email is
+  `Communitymusicband@gmail.com`; the password is never printed or committed.
+- Run `php artisan admin:setup-link` from `backend/` to create the account (if needed) and
+  write a signed, single-use setup link to
+  `backend/storage/app/private/admin-reset-link.txt`. The link expires after 60 minutes.
+- `/admin/forgot-password` prepares the same kind of link. After opening it, choose a new
+  password of at least 10 characters. The link is consumed after one successful reset.
+- Admin sessions use Sanctum bearer tokens and expire after eight hours by default
+  (`SANCTUM_EXPIRATION=480`). Admins can edit/reorder/hide Home and About sections and items,
+  manage Settings, and create/edit/soft-delete performances, testimonials, and Stories.
+- Stories are public at `/stories` and `/stories/:slug`; `/blog` redirects to `/stories`.
+  The three seeded Stories are clearly labelled samples and stay unpublished until an
+  administrator reviews and publishes them.
+- The Daytime/Evening palette is defined as semantic tokens in `src/index.css`. Colour
+  choices are documented in `design-system/community-music-band/MASTER.md`.
+
+The admin API is grouped under `/api/admin`:
+
+- `POST /api/admin/login`, `POST /api/admin/logout`, `GET /api/admin/me`
+- `GET /api/admin/home` and `GET /api/admin/about`; section/item edits and reordering use
+  the matching `PUT` routes, and settings are saved through `/api/admin/settings`
+- `GET|POST|PUT|DELETE /api/admin/{performances|testimonials|stories}`
+- `POST /api/admin/forgot-password` prepares a link; `POST /api/admin/reset-password`
+  consumes it once
 
 ### Performance Model Schema (`performances` table)
 - `id` (bigint, auto-increment)
 - `title` (string) — Performance/event title
 - `performance_date` (date) — Event date (`YYYY-MM-DD`)
+- `start_time` (time, nullable) — Event start time (`HH:MM`)
 - `event_type` (string) — Category (Concert, Parade, Outdoor Festival, Community Outreach, Charity Gala)
 - `venue` (string) — Hall, park, or center name
 - `city` (string) — City name
 - `duration_minutes` (integer) — Duration in minutes
 - `conductor` (string) — Musical director / conductor name
 - `description` (text) — Detailed performance synopsis
+- `is_published` (boolean) — Public visibility flag
+- `deleted_at` (timestamp, nullable) — Soft-delete marker
 - `created_at` / `updated_at` (timestamps)
+
+The seeded 2026 Pampanga performance schedule is sample data. It is labelled in
+`site_settings` (`performances.sample_notice`) and in the Home events section so it can be replaced
+with the band's real dates before the site is promoted.
 
 ---
 
@@ -106,9 +154,30 @@ npm run dev
    - Full venue, conductor, duration, logistics, and program notes.
    - Direct back navigation links to `/` and `/performances`.
 3. **Dynamic Home Page (`/` / `Home.tsx`):**
-   - Hero "Next Concert" live floating badge dynamically connected to the soonest performance from the database.
-   - "2026 Concerts & Performances" section displaying database-driven events with links to detail pages.
-   - Graceful fallback ensures high availability.
+   - Renders the ordered `home_sections` payload from `GET /api/home` through a typed section registry.
+   - Hero "Next Concert" badge uses the server-computed `next_performance`.
+   - "2026 Concerts & Performances" section displays published performances with a visible sample-data notice.
+   - Loading, empty, and retry states keep the page usable if the API is unavailable.
+4. **Dynamic About Page (`/about` / `About.tsx`):**
+   - Renders `about_us_sections` and their items through a typed section registry.
+   - Profile, mission, timeline, values, impact, FAQ, and join content are fully CMS-driven.
+   - Contact and rehearsal details come from `GET /api/settings`.
+5. **Instrument Gallery (`/instruments` / `Instruments.tsx`):**
+   - Organises all 17 local instrument photographs into woodwinds, brass, strings, and percussion.
+   - Includes the Home page's "Every sound has a place" programme teaser.
+   - Instrument images are optimised WebP assets under `src/assets/instruments/`.
+6. **CMS-managed Settings:**
+   - The navbar, footer, contact details, social links, and page SEO metadata read from `GET /api/settings`.
+   - Public pages fall back to seeded defaults while the settings request is in flight.
+7. **In-site Admin CMS (`/admin` / `AdminDashboard.tsx`):**
+   - Sanctum-protected sign-in, session restore, sign-out, and a one-time password reset flow.
+   - Home/About section and item editors with visibility toggles and safe reordering.
+   - Full create/edit/soft-delete management for performances, testimonials, and Stories.
+   - Settings editor for contact details, navigation, SEO, and public notices.
+8. **Stories (`/stories` / `Stories.tsx`):**
+   - "Notes from the Bandstand" index and article pages driven by the public Stories API.
+   - Unpublished drafts stay off the public site; `/blog` redirects to `/stories`.
+   - Seeded sample Stories are labelled in the admin and never published automatically.
 
 ---
 
@@ -175,6 +244,20 @@ push and pull request.
 | `PENDING_ALERTS_FILE` | `server/.env` | Optional. Where undelivered alerts wait. Defaults to `server/data/pending-alerts.jsonl` |
 
 Every `.env` file is git-ignored; copy the matching `.env.example` to create them.
+
+The Laravel CMS also reads:
+
+| Variable | File | Purpose |
+| --- | --- | --- |
+| `FRONTEND_URL` | `backend/.env` | Public SPA origin used when building one-time admin reset links |
+| `FRONTEND_URLS` | `backend/.env` | Comma-separated browser origins allowed by CORS |
+| `SANCTUM_EXPIRATION` | `backend/.env` | Admin token lifetime in minutes. Defaults to `480` (8 hours) |
+| `ADMIN_EMAIL` | `backend/.env` | Administrator email. Defaults to `Communitymusicband@gmail.com` |
+| `ADMIN_NAME` | `backend/.env` | Display name for the administrator account |
+
+`php artisan admin:setup-link` creates the account if it is missing, but it never prints a
+password. It writes the setup link to `storage/app/private/admin-reset-link.txt`; open that
+file locally and use the link in the browser.
 
 The API accepts any `localhost`/`127.0.0.1` origin on any port, so donations keep working when Vite
 falls back to `5174` because `5173` was already taken.

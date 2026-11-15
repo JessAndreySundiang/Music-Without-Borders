@@ -13,11 +13,8 @@ import {
 import type { IconComponent, IconKey as IconKeyType } from "../data/about.types";
 
 /**
- * Maps the string keys stored in `about.json` to their React icon components.
- *
- * Using a `Record` with the `IconKey` union guarantees that every key defined
- * in the type system has a matching component — a missing entry causes a
- * compile-time error.
+ * Maps the string keys stored in the CMS to their React icon components.
+ * Unknown or missing keys fall back to the music note rather than crashing.
  */
 const iconMap: Record<IconKeyType, IconComponent> = {
   IconCalendar,
@@ -32,9 +29,9 @@ const iconMap: Record<IconKeyType, IconComponent> = {
   IconUsers,
 };
 
-/** Resolve an icon key from JSON into its React component. */
-export function resolveIcon(key: IconKeyType): IconComponent {
-  return iconMap[key];
+/** Resolve an icon key from the CMS into its React component. */
+export function resolveIcon(key?: string | null): IconComponent {
+  return iconMap[key as IconKeyType] ?? IconMusic;
 }
 
 export default iconMap;

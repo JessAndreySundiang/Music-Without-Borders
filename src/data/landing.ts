@@ -21,7 +21,9 @@ type NavItem = { label: string; to: string; end?: boolean };
 export const navItems: NavItem[] = [
   { label: "Home", to: "/", end: true },
   { label: "Performances", to: "/performances" },
+  { label: "Instruments", to: "/instruments" },
   { label: "About", to: "/about" },
+  { label: "Stories", to: "/stories" },
   { label: "Donate", to: "/donate" },
 ];
 

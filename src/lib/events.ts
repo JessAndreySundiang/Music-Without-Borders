@@ -21,6 +21,21 @@ export function eventDateParts(
   return { month, day: match[3], dayOfMonth };
 }
 
+/** Converts the API's 24-hour `HH:MM` into a friendly 12-hour label. */
+export function formatTime(time: string | null | undefined): string {
+  if (!time) return "";
+  const match = /^(\d{2}):(\d{2})/.exec(time);
+  if (!match) return time;
+
+  const hour = Number(match[1]);
+  const minute = match[2];
+  if (hour < 0 || hour > 23) return time;
+
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minute} ${suffix}`;
+}
+
 /** Today in the visitor's own calendar, as `YYYY-MM-DD`. */
 export function localIsoDate(today: Date = new Date()): string {
   const month = String(today.getMonth() + 1).padStart(2, "0");

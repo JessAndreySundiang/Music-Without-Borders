@@ -18,7 +18,7 @@ import {
 } from "../components/Icons";
 import { hasStripeKey, stripeMode, stripePromise } from "../lib/stripe";
 import { parseDonationAmount, type ConfirmedDonation } from "../lib/donation";
-import { usePageTitle } from "../lib/usePageTitle";
+import { usePageMeta } from "../lib/usePageTitle";
 import { useResolvedTheme } from "../lib/useResolvedTheme";
 import { buildStripeAppearance } from "../lib/stripeAppearance";
 
@@ -44,7 +44,12 @@ const impact = [
 ];
 
 function Donate() {
-  usePageTitle("Donate");
+  usePageMeta({
+    page: "donate",
+    fallbackTitle: "Donate",
+    fallbackDescription:
+      "Your gift keeps lessons, instruments, and concerts free for the community.",
+  });
   const [amountText, setAmountText] = useState("25");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

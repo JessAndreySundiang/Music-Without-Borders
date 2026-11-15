@@ -3,6 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 import { IconClose, IconMenu, IconMusic } from "./Icons";
 import { navItems } from "../data/landing";
+import { useSiteSettings } from "../lib/siteSettingsContext";
 import logo from "../assets/logo.svg";
 
 const linkBase =
@@ -12,6 +13,7 @@ function Navbar() {
   const [open, setOpen] = useState<boolean>(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const { pathname } = useLocation();
+  const { get } = useSiteSettings();
   const close = () => setOpen(false);
 
   // Escape closes the mobile panel and hands focus back to the button that opened it.
@@ -62,12 +64,12 @@ function Navbar() {
               <img src={logo} alt="" className="size-6" />
             </span>
             <span className="min-w-0 truncate text-[0.95rem] font-bold tracking-tight text-ink">
-              Community Music Band
+              {get("site.name", "Community Music Band")}
             </span>
           </NavLink>
 
           {/* Desktop */}
-          <div className="hidden items-center gap-1 md:flex">
+          <div className="hidden items-center gap-1 lg:flex">
             {navItems.map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className={linkClass}>
                 {item.label}
@@ -88,7 +90,7 @@ function Navbar() {
             <button
               ref={toggleRef}
               type="button"
-              className="grid size-10 place-items-center rounded-xl text-ink transition-colors duration-200 hover:bg-nav-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-bright md:hidden"
+              className="grid size-10 place-items-center rounded-xl text-ink transition-colors duration-200 hover:bg-nav-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-bright lg:hidden"
               aria-label={open ? "Close navigation" : "Open navigation"}
               aria-expanded={open}
               aria-controls="primary-navigation"
@@ -105,9 +107,9 @@ function Navbar() {
           id="primary-navigation"
           inert={!open}
           aria-hidden={!open}
-          className={`mt-2 overflow-hidden rounded-2xl border bg-nav backdrop-blur-xl transition-all duration-300 md:hidden ${
+          className={`mt-2 overflow-hidden rounded-2xl border bg-nav backdrop-blur-xl transition-all duration-300 lg:hidden ${
             open
-              ? "max-h-80 border-nav-line opacity-100"
+              ? "max-h-[30rem] border-nav-line opacity-100"
               : "pointer-events-none max-h-0 border-transparent opacity-0"
           }`}
         >

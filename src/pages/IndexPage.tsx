@@ -10,21 +10,29 @@ import {
   IconAlert,
   IconTicket,
 } from "../components/Icons";
+import SampleNotice from "../components/cms/SampleNotice";
 import { fetchPerformances } from "../lib/api";
-import { eventDateParts } from "../lib/events";
-import { usePageTitle } from "../lib/usePageTitle";
+import { eventDateParts, formatTime } from "../lib/events";
+import { usePageMeta } from "../lib/usePageTitle";
 import type { Performance } from "../types/Performance";
 
 const eventTypeColors: Record<string, string> = {
   Concert: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
   Parade: "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  "Outdoor Festival": "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  "Community Outreach": "border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300",
+  "Outdoor Festival":
+    "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  "Community Outreach":
+    "border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300",
   "Charity Gala": "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300",
 };
 
 export function IndexPage() {
-  usePageTitle("2026 Concert Season & Performances");
+  usePageMeta({
+    page: "performances",
+    fallbackTitle: "2026 Concert Season & Performances",
+    fallbackDescription:
+      "All Community Music Band concerts and outreach events are free and open to everyone.",
+  });
 
   const [performances, setPerformances] = useState<Performance[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -46,7 +54,29 @@ export function IndexPage() {
   };
 
   useEffect(() => {
-    loadData();
+    let cancelled = false;
+
+    // Load once on mount. Keeping the initial state in `useState` means the
+    // effect never has to set state synchronously before the request starts.
+    fetchPerformances()
+      .then((data) => {
+        if (!cancelled) {
+          setPerformances(data);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load performances");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const eventTypes = useMemo(() => {
@@ -77,25 +107,13 @@ export function IndexPage() {
       <PageHero
         eyebrow="2026 Concert Season"
         title="Live Performances & Rehearsal Schedule"
-        text="All Community Music Band concerts and outreach events are 100% free and open to the public. Powered by our headless Laravel CMS API."
-      >
-        {/* Live CMS Status Pill */}
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 backdrop-blur-sm">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
-            </span>
-            CMS Feature: Database-Driven API (Laravel + SQLite)
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-stage-line-strong bg-stage-glass-strong px-3 py-1.5 text-xs font-medium text-stage-muted backdrop-blur-sm">
-            Endpoint: <code className="font-mono text-[0.7rem] text-stage-fg">GET /api/performances</code>
-          </span>
-        </div>
-      </PageHero>
+        text="All Community Music Band concerts and outreach events are free and open to everyone. Bring a friend, a chair, and your love of music."
+      />
 
       <section className="band bg-paper min-h-[60vh]">
         <div className="mx-auto w-full max-w-6xl px-5 py-12 md:py-16">
+          <SampleNotice className="mb-8" />
+
           {/* Controls: Search and Event Type Filters */}
           <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             {/* Filter pills */}
@@ -139,9 +157,9 @@ export function IndexPage() {
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <IconSpinner className="size-10 animate-spin text-brass" />
               <p className="mt-4 font-serif text-lg font-medium text-ink">
-                Fetching performance schedule from Laravel API...
+                Loading the performance schedule…
               </p>
-              <p className="text-sm text-muted">Connecting to http://127.0.0.1:8000/api/performances</p>
+              <p className="text-sm text-muted">This will only take a moment.</p>
             </div>
           )}
 
@@ -150,21 +168,18 @@ export function IndexPage() {
             <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-8 text-center max-w-xl mx-auto">
               <IconAlert className="size-10 text-rose-500 mx-auto" />
               <h3 className="mt-4 font-serif text-xl font-semibold text-ink">
-                Unable to Connect to Backend API
+                We Couldn’t Load the Schedule
               </h3>
               <p className="mt-2 text-sm text-muted">
-                {error}. Please ensure the Laravel server is running with{" "}
-                <code className="rounded bg-rose-500/20 px-1.5 py-0.5 font-mono text-xs text-rose-800 dark:text-rose-200">
-                  php artisan serve
-                </code>{" "}
-                on port 8000.
+                Please check your connection and try again. If the problem continues, come back a
+                little later.
               </p>
               <button
                 type="button"
                 onClick={loadData}
                 className="mt-6 inline-flex items-center gap-2 rounded-full bg-brass-bright px-6 py-2.5 text-sm font-bold text-night-950 shadow-md transition-all hover:bg-amber-300"
               >
-                Retry Connection
+                Try Again
               </button>
             </div>
           )}
@@ -173,7 +188,9 @@ export function IndexPage() {
           {!loading && !error && filteredPerformances.length === 0 && (
             <div className="rounded-3xl border border-line bg-surface p-12 text-center max-w-md mx-auto">
               <IconTicket className="size-12 text-brass mx-auto opacity-70" />
-              <h3 className="mt-4 font-serif text-xl font-semibold text-ink">No Performances Found</h3>
+              <h3 className="mt-4 font-serif text-xl font-semibold text-ink">
+                No Performances Found
+              </h3>
               <p className="mt-2 text-sm text-muted">
                 No performances match your current filter or search criteria.
               </p>
@@ -196,8 +213,7 @@ export function IndexPage() {
               {filteredPerformances.map((perf) => {
                 const dateParts = eventDateParts(perf.performance_date);
                 const badgeColor =
-                  eventTypeColors[perf.event_type] ||
-                  "border-line bg-surface text-muted";
+                  eventTypeColors[perf.event_type] || "border-line bg-surface text-muted";
 
                 return (
                   <article
@@ -247,7 +263,10 @@ export function IndexPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <IconClock className="size-4 shrink-0 text-brass" />
-                          <span>Duration: {perf.duration_minutes} minutes</span>
+                          <span>
+                            {formatTime(perf.start_time) ? `${formatTime(perf.start_time)} · ` : ""}
+                            {perf.duration_minutes} minutes
+                          </span>
                         </div>
                       </div>
                     </div>

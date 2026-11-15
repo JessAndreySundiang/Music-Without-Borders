@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import PageHero from "../components/PageHero";
-import { contact } from "../data/landing";
 import { legalDocs } from "../data/legal";
+import { useSiteSettings } from "../lib/siteSettingsContext";
 import { usePageTitle } from "../lib/usePageTitle";
 
 type LegalProps = {
@@ -11,6 +11,7 @@ type LegalProps = {
 
 function Legal({ slug }: LegalProps) {
   const doc = legalDocs.find((entry) => entry.slug === slug) ?? legalDocs[0];
+  const { get } = useSiteSettings();
   usePageTitle(doc.eyebrow);
 
   return (
@@ -41,12 +42,12 @@ function Legal({ slug }: LegalProps) {
             <p className="mt-2 text-muted">
               Call{" "}
               <a
-                href={contact.phoneHref}
-                className="font-semibold text-brass transition-colors duration-200 hover:text-brass-bright focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-bright"
+                href={get("contact.phone_href")}
+                className="font-semibold text-brass underline decoration-brass/40 underline-offset-2 transition-colors duration-200 hover:text-plume focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-bright"
               >
-                {contact.phoneLabel}
+                {get("contact.phone_label")}
               </a>
-              , or write to us at {contact.address}.
+              , or write to us at {get("contact.address")}.
             </p>
             <Link
               to="/about"

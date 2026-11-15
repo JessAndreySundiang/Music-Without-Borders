@@ -1,17 +1,20 @@
 import { Link } from "react-router-dom";
 import { IconClock, IconMapPin, IconPhone } from "./Icons";
-import { contact, legalLinks, navItems, socials } from "../data/landing";
+import { legalLinks, navItems, socials } from "../data/landing";
+import { useSiteSettings } from "../lib/siteSettingsContext";
 import logo from "../assets/logo.svg";
-
-const rehearsal = [
-  { Icon: IconClock, text: "Saturdays, 9:00 AM to 12:00 NN" },
-  { Icon: IconMapPin, text: contact.venue },
-];
 
 const linkFocus =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-bright";
 
 function Footer() {
+  const { get } = useSiteSettings();
+  const siteName = get("site.name", "Community Music Band");
+  const rehearsal = [
+    { Icon: IconClock, text: get("rehearsal.schedule") },
+    { Icon: IconMapPin, text: get("contact.venue") },
+  ];
+
   return (
     <footer className="border-t border-line bg-paper-2">
       <div className="mx-auto w-full max-w-6xl px-5 py-14">
@@ -22,27 +25,27 @@ function Footer() {
               <span className="grid size-10 place-items-center rounded-full bg-night-950 ring-1 ring-brass/50">
                 <img src={logo} alt="" className="size-6" />
               </span>
-              <span className="font-serif text-lg font-semibold text-ink">
-                Community Music Band
-              </span>
+              <span className="font-serif text-lg font-semibold text-ink">{siteName}</span>
             </div>
-            <p className="max-w-xs text-sm leading-relaxed text-muted">
-              A volunteer, non-profit band teaching and performing free music for our community.
-            </p>
+            <p className="max-w-xs text-sm leading-relaxed text-muted">{get("site.tagline")}</p>
             <ul className="flex items-center gap-2">
-              {socials.map(({ label, href, icon: Icon }) => (
-                <li key={label}>
-                  <a
-                    href={href}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`Community Music Band on ${label}`}
-                    className={`grid size-10 place-items-center rounded-full border border-line text-muted transition-all duration-200 hover:-translate-y-0.5 hover:border-brass hover:text-brass ${linkFocus}`}
-                  >
-                    <Icon className="size-5" />
-                  </a>
-                </li>
-              ))}
+              {socials.map(({ label, href, icon: Icon }) => {
+                const socialHref = get(`social.${label.toLowerCase()}`, href);
+
+                return (
+                  <li key={label}>
+                    <a
+                      href={socialHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`${siteName} on ${label}`}
+                      className={`grid size-10 place-items-center rounded-full border border-line text-muted transition-all duration-200 hover:-translate-y-0.5 hover:border-brass hover:text-brass ${linkFocus}`}
+                    >
+                      <Icon className="size-5" />
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
@@ -82,20 +85,20 @@ function Footer() {
             <ul className="space-y-3 text-sm">
               <li>
                 <a
-                  href={contact.phoneHref}
+                  href={get("contact.phone_href")}
                   className={`flex items-center gap-2.5 text-muted transition-colors duration-200 hover:text-brass ${linkFocus}`}
                 >
                   <IconPhone className="size-4.5 shrink-0 text-brass" />
-                  {contact.phoneLabel}
+                  {get("contact.phone_label")}
                 </a>
               </li>
-              <li className="text-muted">{contact.address}</li>
+              <li className="text-muted">{get("contact.address")}</li>
             </ul>
           </div>
         </div>
 
         <div className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 Community Music Band Organization. A non-profit organization.</p>
+          <p>{get("footer.copyright")}</p>
           <ul className="flex items-center gap-5">
             {legalLinks.map((item) => (
               <li key={item.to}>

@@ -3,6 +3,7 @@ import { IconMusic, IconPhone } from "./Icons";
 type ProfileCardProps = {
   name: string;
   age: number;
+  role?: string;
   school: string;
   course: string;
   address: string;
@@ -10,6 +11,8 @@ type ProfileCardProps = {
   /** A ready-made `tel:` link, so the number dials from outside the country too. */
   phoneHref: string;
   instrument: string;
+  bio?: string;
+  imageUrl?: string | null;
 };
 
 // Picks up src/assets/profile.jpg (or .jpeg, .png, .webp) automatically if it exists
@@ -23,23 +26,27 @@ const photo: string | undefined = Object.values(photos)[0];
 function ProfileCard({
   name,
   age,
+  role,
   school,
   course,
   address,
   phone,
   phoneHref,
   instrument,
+  bio,
+  imageUrl,
 }: ProfileCardProps) {
-  const parts = name.split(" ");
-  const initials = parts[0][0] + parts[parts.length - 1][0];
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const initials = `${parts[0]?.[0] ?? ""}${parts[parts.length - 1]?.[0] ?? ""}`.toUpperCase();
   const rows: { label: string; value: string }[] = [
-    { label: "Age", value: `${age} years old` },
+    ...(age > 0 ? [{ label: "Age", value: `${age} years old` }] : []),
     { label: "Course", value: course },
     { label: "School", value: school },
     { label: "Address", value: address },
     { label: "Contact", value: phone },
     { label: "Instrument", value: instrument },
   ];
+  const portrait = imageUrl || photo;
 
   return (
     <article className="grid items-center gap-12 lg:grid-cols-[minmax(260px,380px)_1fr]">
@@ -50,8 +57,8 @@ function ProfileCard({
           className="absolute inset-0 left-5 top-5 rounded-3xl bg-gradient-to-br from-amber-300 to-amber-500"
         />
         <div className="relative aspect-4/5 overflow-hidden rounded-3xl border-[6px] border-surface bg-tile shadow-2xl">
-          {photo ? (
-            <img src={photo} alt={`Portrait of ${name}`} className="size-full object-cover" />
+          {portrait ? (
+            <img src={portrait} alt={`Portrait of ${name}`} className="size-full object-cover" />
           ) : (
             <div className="grid size-full place-items-center bg-gradient-to-br from-tile to-tile-2 font-serif text-6xl text-tile-fg">
               {initials}
@@ -69,9 +76,8 @@ function ProfileCard({
         <h2 className="font-serif text-3xl font-semibold tracking-tight text-ink md:text-4xl">
           {name}
         </h2>
-        <p className="mt-2 font-semibold text-plume">
-          Flute and piccolo player · Community band volunteer
-        </p>
+        {role && <p className="mt-2 font-semibold text-plume">{role}</p>}
+        {bio && <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted">{bio}</p>}
 
         <dl className="mt-8 grid gap-x-10 sm:grid-cols-2">
           {rows.map((row) => (

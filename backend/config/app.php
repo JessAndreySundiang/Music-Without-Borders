@@ -54,6 +54,12 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
+    'admin_email' => env('ADMIN_EMAIL', 'Communitymusicband@gmail.com'),
+
+    'admin_name' => env('ADMIN_NAME', 'Community Music Band Admin'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
@@ -65,7 +71,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'Asia/Manila'),
 
     /*
     |--------------------------------------------------------------------------
