@@ -59,7 +59,7 @@ php artisan key:generate
 # Execute migrations and seed the CMS content
 php artisan migrate --seed
 
-# Create the administrator account and write a one-time setup link
+# Create the administrator account and deliver a one-time setup link
 php artisan admin:setup-link
 
 # Start the Laravel headless REST API
@@ -102,10 +102,14 @@ soft deletes. The public API only returns visible/published content.
 - The in-site CMS lives at `/admin`. The administrator email is
   `Communitymusicband@gmail.com`; the password is never printed or committed.
 - Run `php artisan admin:setup-link` from `backend/` to create the account (if needed) and
-  write a signed, single-use setup link to
-  `backend/storage/app/private/admin-reset-link.txt`. The link expires after 60 minutes.
+  deliver a signed, single-use setup link. Locally it is written to
+  `backend/storage/app/private/admin-reset-link.txt`; staging/production can email it through
+  Brevo. The link expires after 60 minutes.
 - `/admin/forgot-password` prepares the same kind of link. After opening it, choose a new
   password of at least 10 characters. The link is consumed after one successful reset.
+- Local installs set `ADMIN_RESET_DELIVERY=file`. Set `ADMIN_RESET_DELIVERY=mail` and configure
+  `MAIL_MAILER=smtp` with Brevo's SMTP relay in staging/production. The service refuses to write
+  reset links to a `log` or `array` mailer.
 - Admin sessions use Sanctum bearer tokens and expire after eight hours by default
   (`SANCTUM_EXPIRATION=480`). Admins can edit/reorder/hide Home and About sections and items,
   manage Settings, and create/edit/soft-delete performances, testimonials, and Stories.
@@ -232,11 +236,17 @@ CI (`.github/workflows/ci.yml`) runs on every push and pull request:
   test suite.
 - **MySQL migration smoke:** migrations plus seeders against MySQL 8, then a repeat migration
   check to confirm the schema is idempotent.
+- **Browser end-to-end:** Playwright against a production Vite preview and a fresh seeded MySQL
+  database, including public routes, redirects, themes, mobile navigation, admin auth, and axe
+  WCAG A/AA checks.
+- **Security:** Gitleaks over the full commit history and a high-severity dependency review on pull
+  requests.
 
 ### Environment variables
 
 | Variable | File | Purpose |
 | --- | --- | --- |
+| `VITE_API_BASE_URL` | `.env` | Laravel API base URL, including `/api`. Defaults to `http://127.0.0.1:8000/api` |
 | `VITE_STRIPE_PUBLISHABLE_KEY` | `.env` | Stripe publishable key (`pk_test_...` or `pk_live_...`) used by the browser |
 | `VITE_API_URL` | `.env` | Optional. Donation API base URL. Defaults to `http://localhost:4242` |
 | `STRIPE_SECRET_KEY` | `server/.env` | Stripe secret key (`sk_test_...` or `sk_live_...`) used by the API — never expose this one |
@@ -266,10 +276,14 @@ The Laravel CMS also reads:
 | `SANCTUM_EXPIRATION` | `backend/.env` | Admin token lifetime in minutes. Defaults to `480` (8 hours) |
 | `ADMIN_EMAIL` | `backend/.env` | Administrator email. Defaults to `Communitymusicband@gmail.com` |
 | `ADMIN_NAME` | `backend/.env` | Display name for the administrator account |
+| `ADMIN_RESET_DELIVERY` | `backend/.env` | `file` for local/private-file delivery, `mail` to send reset links through Brevo SMTP |
+| `FORCE_HTTPS` | `backend/.env` | Set `true` when TLS terminates at a proxy and Laravel sees HTTP on the backend hop |
+| `MAIL_MAILER` / `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD` / `MAIL_FROM_ADDRESS` | `backend/.env` | Brevo SMTP settings, required when `ADMIN_RESET_DELIVERY=mail` |
 
 `php artisan admin:setup-link` creates the account if it is missing, but it never prints a
-password. It writes the setup link to `storage/app/private/admin-reset-link.txt`; open that
-file locally and use the link in the browser.
+password. With `ADMIN_RESET_DELIVERY=file` it writes the setup link to
+`storage/app/private/admin-reset-link.txt`; with `ADMIN_RESET_DELIVERY=mail` it emails the link
+through the configured mailer. The link expires after 60 minutes and can be used once.
 
 The API accepts any `localhost`/`127.0.0.1` origin on any port, so donations keep working when Vite
 falls back to `5174` because `5173` was already taken.
@@ -402,6 +416,7 @@ failures as a concern, and the relay removes a Gmail outage as a concern.
 
 ```bash
 npm test
+npm run test:e2e
 ```
 
 Vitest runs two suites with no extra test dependencies: server tests that boot the real app on an
@@ -409,8 +424,20 @@ ephemeral port and drive it over HTTP (amount parsing, rate limiting, CORS, the 
 Stripe signature, the ledger, the donation alert, its retry queue and its transport failover), and
 unit tests for the client-side amount formatting and idempotency key.
 
+Playwright drives the real React app against the Laravel API. It covers public navigation, the
+`/blog` redirect, the 404 page, theme persistence, mobile menu navigation, the admin sign-in guard,
+invalid credentials, the generic forgot-password response, and WCAG A/AA checks. Install the
+browser once with `npx playwright install chromium`. The suite starts the Laravel API and a
+production Vite preview automatically unless they are already running. In CI it runs against a
+fresh seeded MySQL database.
+
 The webhook tests inject a fake alert pipeline and the alert message is built as plain data, so the
 suite needs no Gmail credentials and never opens an SMTP connection.
+
+The GitHub Actions workflow also runs Gitleaks over the full commit history, a high-severity
+dependency review on pull requests, production dependency audits, MySQL migration/seed smoke tests,
+and the Playwright browser suite. See `docs/staging.md` for the deployment runbook and
+`docs/uat.md` for the manual acceptance checklist.
 
 ## Project layout
 
@@ -423,6 +450,9 @@ design-system/  the design system the UI follows
 ```
 
 ## Before you deploy
+
+The full deployment runbook is in [`docs/staging.md`](docs/staging.md), and the manual acceptance
+checklist is in [`docs/uat.md`](docs/uat.md). The short version:
 
 - **Set your real domain.** `musicwithoutborders.example` is a placeholder in `index.html`
   (canonical, Open Graph, JSON-LD), `public/robots.txt` and `public/sitemap.xml`. Replace it in all

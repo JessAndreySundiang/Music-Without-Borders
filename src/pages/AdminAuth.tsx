@@ -170,8 +170,9 @@ export function AdminLoginPage() {
       </form>
       <p className="mt-6 flex items-start gap-2 text-xs leading-relaxed text-muted">
         <IconMusic className="mt-0.5 size-4 shrink-0 text-brass" />
-        The first-time setup link is written to the backend's private storage folder. It is never
-        printed in the browser or terminal.
+        First-time setup and password-reset links are emailed in production, or written to the
+        backend's private storage folder on a local install. They are never printed in the browser
+        or terminal.
       </p>
     </AdminAuthShell>
   );
@@ -203,7 +204,7 @@ export function AdminForgotPasswordPage() {
     <AdminAuthShell
       eyebrow="Password help"
       title="A one-time link, not a password in an inbox."
-      description="Enter the administrator email. If it matches, a signed reset link is prepared for local delivery."
+      description="Enter the administrator email. If it matches, a one-time reset link is prepared securely."
     >
       <FormError message={error} />
       {message ? (
@@ -214,7 +215,7 @@ export function AdminForgotPasswordPage() {
           <div className="rounded-2xl border border-line bg-paper p-4 text-sm leading-relaxed text-muted">
             <p className="font-bold text-ink">Where is the link?</p>
             <p className="mt-1">
-              On this local install, open{" "}
+              Production installs send it to the administrator inbox. On a local install, open{" "}
               <code className="rounded bg-surface px-1.5 py-0.5 text-xs text-ink">
                 backend/storage/app/private/admin-reset-link.txt
               </code>

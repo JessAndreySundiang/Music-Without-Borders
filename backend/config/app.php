@@ -41,6 +41,11 @@ return [
 
     'debug' => (bool) env('APP_DEBUG', false),
 
+    // Set true when TLS terminates at a trusted proxy and the request scheme
+    // cannot be detected reliably. The HSTS header is sent even if Laravel sees
+    // plain HTTP on the backend hop.
+    'force_https' => (bool) env('FORCE_HTTPS', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application URL
@@ -59,6 +64,10 @@ return [
     'admin_email' => env('ADMIN_EMAIL', 'Communitymusicband@gmail.com'),
 
     'admin_name' => env('ADMIN_NAME', 'Music Without Borders Admin'),
+
+    // "file" keeps raw reset links in private storage for local/demo installs.
+    // Set "mail" on staging and production after configuring Brevo SMTP.
+    'admin_reset_delivery' => env('ADMIN_RESET_DELIVERY', 'file'),
 
     /*
     |--------------------------------------------------------------------------

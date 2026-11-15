@@ -3,6 +3,9 @@ node_modules
 backend
 server/node_modules
 server/data
+playwright-report
+test-results
+blob-report
 package-lock.json
 server/package-lock.json
 *.md

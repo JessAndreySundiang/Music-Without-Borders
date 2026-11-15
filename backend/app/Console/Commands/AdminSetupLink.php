@@ -13,7 +13,7 @@ class AdminSetupLink extends Command
 {
     protected $signature = 'admin:setup-link';
 
-    protected $description = 'Create the administrator account if needed and write a one-time setup link to private storage';
+    protected $description = 'Create the administrator account if needed and deliver a one-time setup link';
 
     public function handle(AdminPasswordResetService $resets): int
     {
@@ -33,11 +33,18 @@ class AdminSetupLink extends Command
             $user->forceFill(['is_admin' => true, 'name' => $name])->save();
         }
 
-        $resets->writeLinkToStorage($resets->createLink($user));
+        $delivery = $resets->deliverLink($user, $resets->createLink($user));
 
         $this->info('Administrator account is ready for '.$email.'.');
-        $this->info('A one-time setup link was written to '.Storage::disk('local')->path(AdminPasswordResetService::LINK_FILE).'.');
-        $this->line('Open that file locally and use the link in the browser. It expires in 60 minutes and can be used once.');
+
+        if ($delivery === 'mail') {
+            $this->info('A one-time setup link was emailed to the administrator address.');
+        } else {
+            $this->info('A one-time setup link was written to '.Storage::disk('local')->path(AdminPasswordResetService::LINK_FILE).'.');
+            $this->line('Open that file locally and use the link in the browser.');
+        }
+
+        $this->line('It expires in 60 minutes and can be used once.');
 
         return self::SUCCESS;
     }

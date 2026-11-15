@@ -65,7 +65,7 @@ class AdminAuthController extends Controller
             ->first();
 
         if ($user) {
-            $resets->writeLinkToStorage($resets->createLink($user));
+            $resets->deliverLink($user, $resets->createLink($user));
         }
 
         // Always return the same message so this endpoint cannot be used to

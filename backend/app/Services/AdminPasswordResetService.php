@@ -2,12 +2,16 @@
 
 namespace App\Services;
 
+use App\Mail\AdminPasswordResetMail;
 use App\Models\AdminPasswordReset;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class AdminPasswordResetService
 {
@@ -44,12 +48,51 @@ class AdminPasswordResetService
     }
 
     /**
+     * Deliver by email when configured, otherwise keep the local demo link in
+     * private storage. A mail failure falls back to storage so a reset is not
+     * silently lost; only the failure class is logged, never the raw link.
+     *
+     * @return 'mail'|'file'
+     */
+    public function deliverLink(User $user, string $link): string
+    {
+        if (config('app.admin_reset_delivery') === 'mail') {
+            // Never let a log/array mailer write a raw reset token into a log or
+            // an in-memory transport. Misconfiguration falls back to the file.
+            if (in_array(config('mail.default'), ['log', 'array'], true)) {
+                Log::warning('ADMIN_RESET_DELIVERY=mail requires a real mailer; using private storage instead.', [
+                    'user_id' => $user->getKey(),
+                ]);
+            } else {
+                try {
+                    Mail::to($user->email)->send(new AdminPasswordResetMail($user, $link));
+
+                    return 'mail';
+                } catch (Throwable $exception) {
+                    Log::error('Admin password reset email delivery failed; using private storage instead.', [
+                        'user_id' => $user->getKey(),
+                        'exception' => $exception::class,
+                    ]);
+                }
+            }
+        }
+
+        $this->writeLinkToStorage($link);
+
+        return 'file';
+    }
+
+    /**
      * The local demo has no mail transport, so the link is written to a private
      * storage file instead of being exposed in an API response or console log.
      */
     public function writeLinkToStorage(string $link): void
     {
         Storage::disk('local')->put(self::LINK_FILE, $link.PHP_EOL);
+
+        // The file is already outside the web root; restrict it to the process
+        // owner as well. Windows ignores the mode, which is harmless.
+        @chmod(Storage::disk('local')->path(self::LINK_FILE), 0600);
     }
 
     /**

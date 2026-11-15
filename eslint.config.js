@@ -33,4 +33,11 @@ export default defineConfig([
       "no-unused-vars": ["error", { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" }],
     },
   },
+  {
+    // Playwright tests and config run in Node, not in the browser.
+    files: ["e2e/**/*.ts", "playwright.config.ts"],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ]);

@@ -5,12 +5,14 @@ use App\Http\Controllers\AdminPageContentController;
 use App\Http\Controllers\AdminPerformanceController;
 use App\Http\Controllers\AdminStoryController;
 use App\Http\Controllers\AdminTestimonialController;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\PageContentController;
 use App\Http\Controllers\PerformanceController;
 use App\Http\Controllers\SiteSettingController;
 use App\Http\Controllers\StoryController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/health', HealthController::class);
 Route::get('/home', [PageContentController::class, 'home']);
 Route::get('/about', [PageContentController::class, 'about']);
 Route::get('/settings', [SiteSettingController::class, 'index']);

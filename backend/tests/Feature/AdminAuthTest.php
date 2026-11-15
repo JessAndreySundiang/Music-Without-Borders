@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Mail\AdminPasswordResetMail;
 use App\Models\User;
 use App\Services\AdminPasswordResetService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminAuthTest extends TestCase
@@ -78,6 +81,69 @@ class AdminAuthTest extends TestCase
             'email' => 'missing@example.com',
         ])->assertOk()
             ->assertJsonPath('message', 'If that email belongs to an administrator, a one-time reset link has been prepared.');
+    }
+
+    public function test_reset_links_can_be_delivered_by_email(): void
+    {
+        config()->set('app.admin_reset_delivery', 'mail');
+        config()->set('mail.default', 'smtp');
+        Mail::fake();
+
+        $admin = $this->admin();
+
+        $this->postJson('/api/admin/forgot-password', [
+            'email' => $admin->email,
+        ])->assertOk();
+
+        Mail::assertSent(AdminPasswordResetMail::class, function (AdminPasswordResetMail $mail) use ($admin): bool {
+            return $mail->hasTo($admin->email)
+                && $mail->user->is($admin)
+                && str_contains($mail->resetUrl, '/admin/reset-password?');
+        });
+    }
+
+    public function test_reset_links_fall_back_to_private_storage_without_mail_delivery(): void
+    {
+        config()->set('app.admin_reset_delivery', 'file');
+        Storage::fake('local');
+        Mail::fake();
+
+        $admin = $this->admin();
+
+        $this->postJson('/api/admin/forgot-password', [
+            'email' => $admin->email,
+        ])->assertOk();
+
+        Storage::disk('local')->assertExists(AdminPasswordResetService::LINK_FILE);
+        Mail::assertNothingSent();
+    }
+
+    public function test_the_reset_email_renders_without_the_password(): void
+    {
+        $admin = $this->admin();
+        $mail = new AdminPasswordResetMail($admin, 'https://example.test/admin/reset-password?token=test');
+
+        $html = $mail->render();
+
+        $this->assertStringContainsString('Choose a new password', $html);
+        $this->assertStringNotContainsString('correct-password', $html);
+    }
+
+    public function test_mail_delivery_refuses_to_write_reset_links_to_a_log_mailer(): void
+    {
+        config()->set('app.admin_reset_delivery', 'mail');
+        config()->set('mail.default', 'log');
+        Storage::fake('local');
+        Mail::fake();
+
+        $admin = $this->admin();
+
+        $this->postJson('/api/admin/forgot-password', [
+            'email' => $admin->email,
+        ])->assertOk();
+
+        Storage::disk('local')->assertExists(AdminPasswordResetService::LINK_FILE);
+        Mail::assertNothingSent();
     }
 
     private function admin(): User
