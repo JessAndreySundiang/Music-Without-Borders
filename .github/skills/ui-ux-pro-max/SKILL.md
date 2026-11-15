@@ -1,13 +1,13 @@
 ---
 name: ui-ux-pro-max
-description: "Use when designing, building, or refining this React community music band website's frontend, including page layouts, responsive design, accessibility, visual polish, and UI/UX reviews."
+description: "Use when designing, building, or refining this React Music Without Borders website's frontend, including page layouts, responsive design, accessibility, visual polish, and UI/UX reviews."
 argument-hint: "Describe the page, component, or user experience to design or improve."
 user-invocable: true
 ---
 
 # UI/UX Pro Max
 
-Design and implement clear, distinctive, accessible frontend experiences for the Community Music Band website. Prefer the site's established visual language and real user needs over generic layouts or decorative polish without purpose.
+Design and implement clear, distinctive, accessible frontend experiences for the Music Without Borders website. Prefer the site's established visual language and real user needs over generic layouts or decorative polish without purpose.
 
 ## Project Context
 

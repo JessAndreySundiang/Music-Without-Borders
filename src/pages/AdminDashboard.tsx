@@ -1197,7 +1197,7 @@ function StoriesAdmin() {
     },
     { name: "excerpt", label: "Excerpt", type: "textarea", rows: 3 },
     { name: "body", label: "Story body", type: "textarea", required: true, rows: 12 },
-    { name: "author_name", label: "Author name", placeholder: "Community Music Band" },
+    { name: "author_name", label: "Author name", placeholder: "Music Without Borders" },
     { name: "author_role", label: "Author role", placeholder: "Notes from the Bandstand" },
     {
       name: "cover_image_path",
@@ -1220,7 +1220,7 @@ function StoriesAdmin() {
         slug: "",
         excerpt: "",
         body: "",
-        author_name: "Community Music Band",
+        author_name: "Music Without Borders",
         author_role: "Notes from the Bandstand",
         cover_image_path: "",
         sort_order: 0,
@@ -1235,7 +1235,7 @@ function StoriesAdmin() {
       recordMeta={(record) => (
         <>
           <span>{record.published_at ?? "Not published"}</span>
-          <span>{record.author_name || "Community Music Band"}</span>
+          <span>{record.author_name || "Music Without Borders"}</span>
           {record.is_sample && <span className="font-semibold text-brass">Sample content</span>}
         </>
       )}
@@ -1592,7 +1592,7 @@ function AdminDashboard() {
             </span>
             <span className="hidden min-w-0 sm:block">
               <span className="block truncate font-serif text-sm font-semibold text-ink">
-                Community Music Band
+                Music Without Borders
               </span>
               <span className="block text-[0.62rem] font-bold uppercase tracking-widest text-muted">
                 CMS workspace

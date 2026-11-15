@@ -7,7 +7,7 @@ import { contact } from "../data/landing";
  * them as soon as the request resolves.
  */
 export const DEFAULT_SETTINGS: Record<string, string> = {
-  "site.name": "Community Music Band",
+  "site.name": "Music Without Borders",
   "site.tagline":
     "A volunteer, non-profit band teaching and performing free music for our community.",
   "contact.phone_label": contact.phoneLabel,
@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   "contact.venue": contact.venue,
   "contact.email": "Communitymusicband@gmail.com",
   "rehearsal.schedule": "Saturdays, 9:00 AM to 12:00 NN",
-  "footer.copyright": "© 2026 Community Music Band Organization. A non-profit organization.",
+  "footer.copyright": "© 2026 Music Without Borders. A non-profit organization.",
   "social.facebook": "https://facebook.com",
   "social.instagram": "https://instagram.com",
   "social.youtube": "https://youtube.com",
@@ -25,7 +25,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   "seo.home.og_description":
     "Free to learn, free to listen, free to join. A volunteer band making room for more music in our community.",
   "seo.about.page_title": "About",
-  "seo.about.og_title": "About — Community Music Band",
+  "seo.about.og_title": "About — Music Without Borders",
   "seo.about.og_description":
     "Learn about our mission to make music accessible to everyone in Pampanga. Free lessons, free instruments, free concerts.",
   "seo.instruments.page_title": "Instruments",
@@ -35,7 +35,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   "seo.performances.page_title": "2026 Concert Season & Performances",
   "seo.performances.og_title": "Live Performances & Rehearsal Schedule",
   "seo.performances.og_description":
-    "All Community Music Band concerts and outreach events are free and open to everyone.",
+    "All Music Without Borders concerts and outreach events are free and open to everyone.",
   "seo.donate.page_title": "Donate",
   "seo.donate.og_title": "Support free music in Pampanga",
   "seo.donate.og_description":

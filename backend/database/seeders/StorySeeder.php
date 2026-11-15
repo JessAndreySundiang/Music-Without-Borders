@@ -16,7 +16,7 @@ class StorySeeder extends Seeder
                 [
                     ...$story,
                     'slug' => Str::slug($story['title']),
-                    'author_name' => 'Community Music Band',
+                    'author_name' => 'Music Without Borders',
                     'author_role' => 'Notes from the Bandstand',
                     'is_published' => false,
                     'is_sample' => true,

@@ -137,7 +137,7 @@ describe("api client", () => {
   });
 
   it("fetchSiteSettings returns the flat settings map", async () => {
-    const settings = { "site.name": "Community Music Band" };
+    const settings = { "site.name": "Music Without Borders" };
 
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,

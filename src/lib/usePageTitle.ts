@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useSiteSettings } from "./siteSettingsContext";
 
-const FALLBACK_SITE_NAME = "Community Music Band Organization";
+const FALLBACK_SITE_NAME = "Music Without Borders";
 
 function setMeta(attribute: "name" | "property", key: string, content: string): void {
   let element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`);

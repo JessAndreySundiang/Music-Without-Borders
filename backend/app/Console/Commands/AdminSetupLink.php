@@ -18,7 +18,7 @@ class AdminSetupLink extends Command
     public function handle(AdminPasswordResetService $resets): int
     {
         $email = Str::lower((string) config('app.admin_email', 'Communitymusicband@gmail.com'));
-        $name = (string) config('app.admin_name', 'Community Music Band Admin');
+        $name = (string) config('app.admin_name', 'Music Without Borders Admin');
 
         $user = User::query()->firstOrCreate(
             ['email' => $email],

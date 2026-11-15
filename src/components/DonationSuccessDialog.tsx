@@ -264,7 +264,7 @@ function PrintReceipt({ donation }: { donation: ConfirmedDonation }) {
   return (
     <div className="print-receipt">
       <div className="print-receipt-inner">
-        <p className="print-eyebrow">Community Music Band</p>
+        <p className="print-eyebrow">Music Without Borders</p>
         <h1>Donation receipt</h1>
         <p className="print-lead">
           Thank you, {donation.name}. Your gift supports free lessons, instruments and concerts.

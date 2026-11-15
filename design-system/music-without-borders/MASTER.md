@@ -1,12 +1,12 @@
 # Design System Master File
 
-> **LOGIC:** When building a specific page, first check `design-system/community-music-band/pages/[page-name].md`.
+> **LOGIC:** When building a specific page, first check `design-system/music-without-borders/pages/[page-name].md`.
 > If that file exists, its rules **override** this Master file.
 > If not, strictly follow the rules below.
 
 ---
 
-**Project:** Community Music Band
+**Project:** Music Without Borders
 **Direction:** "Golden Hour at the Bandstand"
 **Stack:** React 19 + TypeScript + Vite + **Tailwind CSS v4** (utility-first; there is no
 hand-written component CSS)
@@ -26,7 +26,7 @@ The theme is **token-driven**, not class-driven.
 - Every colour lives in `src/index.css` as a CSS custom property on `:root` (Daytime) or
   `[data-theme="dark"]` (Evening).
 - `data-theme` is set on `<html>`. An inline script in `index.html` applies it before first paint
-  from `localStorage["cmb-theme"]`; the default is **dark (Evening)**.
+  from `localStorage["mwb-theme"]`; the default is **dark (Evening)**.
 - **Components never branch on the theme.** They use utilities such as `bg-paper`, `text-muted`,
   `border-line`, and the value flips by itself.
 - `@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *))` has **zero

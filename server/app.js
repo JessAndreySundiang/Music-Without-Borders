@@ -7,7 +7,7 @@ export const DONATION_MAX_USD = 1000;
 export const DONATION_CURRENCY = "usd";
 
 /** Shown beside the charge in the donor's bank statement. */
-const DONATION_DESCRIPTION = "Donation to Community Music Band Organization";
+const DONATION_DESCRIPTION = "Donation to Music Without Borders";
 
 /**
  * Describes a Stripe secret key, so the server can refuse a malformed one and

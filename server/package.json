@@ -1,7 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "Stripe donation API for the Community Music Band site",
+  "description": "Stripe donation API for the Music Without Borders site",
   "private": true,
   "type": "module",
   "scripts": {

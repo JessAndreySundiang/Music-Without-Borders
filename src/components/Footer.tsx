@@ -9,7 +9,7 @@ const linkFocus =
 
 function Footer() {
   const { get } = useSiteSettings();
-  const siteName = get("site.name", "Community Music Band");
+  const siteName = get("site.name", "Music Without Borders");
   const rehearsal = [
     { Icon: IconClock, text: get("rehearsal.schedule") },
     { Icon: IconMapPin, text: get("contact.venue") },

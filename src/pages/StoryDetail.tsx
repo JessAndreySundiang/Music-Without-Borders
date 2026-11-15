@@ -63,7 +63,7 @@ function StoryArticle({ story }: { story: Story }) {
           )}
           <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-stage-muted">
             <span className="font-bold text-stage-fg">
-              {story.author_name ?? "Community Music Band"}
+              {story.author_name ?? "Music Without Borders"}
             </span>
             {story.author_role && <span>{story.author_role}</span>}
             <span aria-hidden="true">·</span>

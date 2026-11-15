@@ -5,7 +5,7 @@
  * module loads), so it keeps its own copy of the default and the key: keep the
  * two in step.
  */
-export const THEME_STORAGE_KEY = "cmb-theme";
+export const THEME_STORAGE_KEY = "mwb-theme";
 export const DEFAULT_THEME = "dark";
 
 export type Theme = "light" | "dark";

@@ -64,7 +64,7 @@ function Navbar() {
               <img src={logo} alt="" className="size-6" />
             </span>
             <span className="min-w-0 truncate text-[0.95rem] font-bold tracking-tight text-ink">
-              {get("site.name", "Community Music Band")}
+              {get("site.name", "Music Without Borders")}
             </span>
           </NavLink>
 

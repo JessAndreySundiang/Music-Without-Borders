@@ -34,7 +34,7 @@ function AdminAuthShell({
           <span className="grid size-12 place-items-center rounded-full border border-medal-ring bg-gradient-to-br from-medal-from to-medal-to">
             <img src={logo} alt="" className="size-7" />
           </span>
-          <span className="font-serif text-xl font-semibold">Community Music Band</span>
+          <span className="font-serif text-xl font-semibold">Music Without Borders</span>
         </Link>
         <div className="max-w-md">
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-brass">CMS workspace</p>
@@ -58,7 +58,7 @@ function AdminAuthShell({
             className="mb-8 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted transition-colors hover:text-brass lg:hidden"
           >
             <img src={logo} alt="" className="size-7 rounded-full bg-night-950 p-1" />
-            Community Music Band
+            Music Without Borders
           </Link>
 
           <div className="rounded-3xl border border-line bg-surface p-7 shadow-xl sm:p-9">

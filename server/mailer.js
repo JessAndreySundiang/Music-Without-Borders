@@ -41,7 +41,7 @@ export function buildDonationAlert(entry, { testMode = false, from, to } = {}) {
  */
 function formatFrom(address) {
   const value = address?.trim() || "no-reply@localhost";
-  return value.includes("<") ? value : `Community Music Band <${value}>`;
+  return value.includes("<") ? value : `Music Without Borders <${value}>`;
 }
 
 function createGmailTransport({ user, appPassword }) {

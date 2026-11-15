@@ -187,7 +187,7 @@ export function DetailPage() {
                   <div className="mt-6 border-t border-line/60 pt-6">
                     <h3 className="font-serif text-lg font-semibold text-ink">Concert Admission</h3>
                     <p className="mt-2 text-sm text-muted">
-                      Admission to all Community Music Band performances is completely free of
+                      Admission to all Music Without Borders performances is completely free of
                       charge. No tickets or reservations are required. Seating is general admission
                       on a first-come, first-served basis. Families with children of all ages are
                       warmly encouraged to attend.
@@ -220,7 +220,7 @@ export function DetailPage() {
                       <p className="mt-1 font-serif text-xl font-bold text-ink">
                         {performance.event_type}
                       </p>
-                      <p className="mt-0.5 text-xs text-muted">Community Music Band 2026 Series</p>
+                      <p className="mt-0.5 text-xs text-muted">Music Without Borders 2026 Series</p>
                     </div>
 
                     <div className="rounded-2xl border border-line/50 bg-paper p-4">

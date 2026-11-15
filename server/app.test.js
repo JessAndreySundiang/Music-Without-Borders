@@ -53,7 +53,7 @@ function createPaymentIntent(base, body, headers = {}) {
 }
 
 async function tempLedger() {
-  const dir = await mkdtemp(path.join(tmpdir(), "cmb-ledger-"));
+  const dir = await mkdtemp(path.join(tmpdir(), "mwb-ledger-"));
   tempDirs.push(dir);
   return path.join(dir, "donations.jsonl");
 }
@@ -693,7 +693,7 @@ describe("createMailer", () => {
 
     expect(transport.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: "Community Music Band <band@gmail.com>",
+        from: "Music Without Borders <band@gmail.com>",
         to: "band@gmail.com",
         subject: "Donation received — $25.00 USD",
       }),
@@ -742,7 +742,7 @@ describe("createMailer", () => {
     expect(fallbackTransport.sendMail).toHaveBeenCalledOnce();
     expect(fallbackTransport.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: "Community Music Band <band@gmail.com>",
+        from: "Music Without Borders <band@gmail.com>",
         to: "band@gmail.com",
       }),
     );
@@ -871,7 +871,7 @@ describe("alert retry queue", () => {
   };
 
   async function tempQueueFile() {
-    const dir = await mkdtemp(path.join(tmpdir(), "cmb-alerts-"));
+    const dir = await mkdtemp(path.join(tmpdir(), "mwb-alerts-"));
     tempDirs.push(dir);
     return path.join(dir, "pending-alerts.jsonl");
   }

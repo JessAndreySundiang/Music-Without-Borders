@@ -35,7 +35,7 @@ function Instruments() {
     page: "instruments",
     fallbackTitle: "Instruments",
     fallbackDescription:
-      "Meet the woodwind, brass, string, and percussion instruments in the Community Music Band's free lending library.",
+      "Meet the woodwind, brass, string, and percussion instruments in the Music Without Borders' free lending library.",
   });
 
   return (

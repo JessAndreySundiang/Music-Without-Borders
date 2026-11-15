@@ -58,7 +58,7 @@ return [
 
     'admin_email' => env('ADMIN_EMAIL', 'Communitymusicband@gmail.com'),
 
-    'admin_name' => env('ADMIN_NAME', 'Community Music Band Admin'),
+    'admin_name' => env('ADMIN_NAME', 'Music Without Borders Admin'),
 
     /*
     |--------------------------------------------------------------------------

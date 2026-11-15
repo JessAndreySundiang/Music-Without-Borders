@@ -16,7 +16,7 @@ import type {
   TestimonialDraft,
 } from "../types/Admin";
 
-const TOKEN_KEY = "cmb-admin-token";
+const TOKEN_KEY = "mwb-admin-token";
 
 export class AdminApiError extends Error {
   status: number;

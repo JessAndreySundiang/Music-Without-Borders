@@ -31,7 +31,7 @@ export function IndexPage() {
     page: "performances",
     fallbackTitle: "2026 Concert Season & Performances",
     fallbackDescription:
-      "All Community Music Band concerts and outreach events are free and open to everyone.",
+      "All Music Without Borders concerts and outreach events are free and open to everyone.",
   });
 
   const [performances, setPerformances] = useState<Performance[]>([]);
@@ -107,7 +107,7 @@ export function IndexPage() {
       <PageHero
         eyebrow="2026 Concert Season"
         title="Live Performances & Rehearsal Schedule"
-        text="All Community Music Band concerts and outreach events are free and open to everyone. Bring a friend, a chair, and your love of music."
+        text="All Music Without Borders concerts and outreach events are free and open to everyone. Bring a friend, a chair, and your love of music."
       />
 
       <section className="band bg-paper min-h-[60vh]">

@@ -61,7 +61,7 @@ function StoryCard({ story, index }: { story: Story; index: number }) {
         <div className="mt-auto flex items-end justify-between gap-4 border-t border-line/60 pt-5">
           <div>
             <p className="text-xs font-bold text-ink">
-              {story.author_name ?? "Community Music Band"}
+              {story.author_name ?? "Music Without Borders"}
             </p>
             <p className="mt-0.5 text-xs text-muted">{storyDate(story.published_at)}</p>
           </div>

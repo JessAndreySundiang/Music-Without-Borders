@@ -46,9 +46,9 @@ for (const entry of entries) {
   const currency = String(entry.currency ?? "usd").toUpperCase();
   byCurrency.set(currency, (byCurrency.get(currency) ?? 0) + amountOf(entry));
 
-  // Grouped case-insensitively: Gmail treats Communitymusicband@ and
-  // CommunityMusicBand@ as the same inbox, so one donor typing it twice is one
-  // donor. The ledger itself keeps what was written; only this report merges.
+  // Grouped case-insensitively: Gmail treats different capitalisations of the
+  // same address as one inbox, so one donor typing it twice is one donor. The
+  // ledger itself keeps what was written; only this report merges.
   const who = entry.email || entry.donorName || "Unknown";
   const donorKey = who.toLowerCase();
   const donor = byDonor.get(donorKey);

@@ -1,4 +1,4 @@
-# Community Music Band — Full-Stack Decoupled CMS Application
+# Music Without Borders — Full-Stack Decoupled CMS Application
 
 > **Final Project / Final Lab Exam Project**
 > An enhanced decoupled full-stack web application featuring a **Laravel Headless REST API (CMS A)** and a **React + TypeScript SPA (CMS B)**.
@@ -113,7 +113,7 @@ soft deletes. The public API only returns visible/published content.
   The three seeded Stories are clearly labelled samples and stay unpublished until an
   administrator reviews and publishes them.
 - The Daytime/Evening palette is defined as semantic tokens in `src/index.css`. Colour
-  choices are documented in `design-system/community-music-band/MASTER.md`.
+  choices are documented in `design-system/music-without-borders/MASTER.md`.
 
 The admin API is grouped under `/api/admin`:
 
@@ -189,7 +189,7 @@ with the band's real dates before the site is promoted.
 
 - **Front end:** React 19, Vite, Tailwind CSS v4 (utility-first), React Router
 - **Donation API:** a small Express server in `server/` that creates Stripe PaymentIntents
-- **Design:** "Golden Hour at the Bandstand" — see `design-system/community-music-band/MASTER.md`
+- **Design:** "Golden Hour at the Bandstand" — see `design-system/music-without-borders/MASTER.md`
 
 ## Getting started
 
@@ -424,7 +424,7 @@ design-system/  the design system the UI follows
 
 ## Before you deploy
 
-- **Set your real domain.** `communitymusicband.example` is a placeholder in `index.html`
+- **Set your real domain.** `musicwithoutborders.example` is a placeholder in `index.html`
   (canonical, Open Graph, JSON-LD), `public/robots.txt` and `public/sitemap.xml`. Replace it in all
   three, then swap `og-image.jpg` for a fresh card if the tagline changes.
 - **Add the real social URLs.** `src/data/landing.ts` currently points the footer icons at each

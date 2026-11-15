@@ -63,7 +63,7 @@ class StoriesApiTest extends TestCase
             'title' => 'A New Note',
             'excerpt' => 'A short excerpt.',
             'body' => "First paragraph.\n\nSecond paragraph.",
-            'author_name' => 'Community Music Band',
+            'author_name' => 'Music Without Borders',
             'is_published' => true,
         ])->assertCreated()
             ->assertJsonPath('data.slug', 'a-new-note')
@@ -92,7 +92,7 @@ class StoriesApiTest extends TestCase
             'slug' => 'story',
             'excerpt' => 'Excerpt',
             'body' => 'Body',
-            'author_name' => 'Community Music Band',
+            'author_name' => 'Music Without Borders',
             'is_published' => false,
             'is_sample' => true,
         ], $overrides));
