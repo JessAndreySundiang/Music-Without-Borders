@@ -44,10 +44,6 @@ backend/storage/framework/sessions/*
 backend/storage/framework/views/*
 backend/storage/logs/*
 
-# Frontend subproject
-frontend/node_modules/
-frontend/dist/
-
 # Local OpenCode tooling (agent skills and their data files). Not part of the
 # band project — kept on disk, deliberately not published.
 .opencode

@@ -1,6 +1,5 @@
 dist
 node_modules
-frontend
 backend
 server/node_modules
 server/data

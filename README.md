@@ -36,6 +36,10 @@
 The same API also serves `/api/home`, `/api/about`, and `/api/settings` for CMS-managed page copy,
 settings, events, and testimonials.
 
+The root project is the canonical application. The earlier duplicate `frontend/` app was archived
+in the Git tag `archive/frontend-legacy`, and then removed from the working tree so there is only
+one frontend to maintain and deploy.
+
 ---
 
 ## 🚀 Quick Start & Installation (For Video Demo)
@@ -217,9 +221,17 @@ Stripe account, and test cards (e.g. `4242 4242 4242 4242`) only work in test mo
 | `npm run format` | Prettier, write |
 | `npm run format:check` | Prettier, check only (what CI runs) |
 | `npm run ledger` | Print a summary of recorded donations |
+| `cd backend && php artisan test` | Laravel feature and unit tests |
+| `cd backend && vendor/bin/pint --test` | Laravel PHP style check |
 
-CI (`.github/workflows/ci.yml`) runs format check → lint → type-check → tests → build on every
-push and pull request.
+CI (`.github/workflows/ci.yml`) runs on every push and pull request:
+
+- **Web app:** format, lint, TypeScript, Vitest (including the donation API tests), build, and
+  production dependency audits.
+- **Laravel API:** Composer validation and install, PHP style, dependency audit, and the full
+  test suite.
+- **MySQL migration smoke:** migrations plus seeders against MySQL 8, then a repeat migration
+  check to confirm the schema is idempotent.
 
 ### Environment variables
 
