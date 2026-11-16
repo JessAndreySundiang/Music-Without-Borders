@@ -4,6 +4,20 @@ Run this against the staging deployment before launch. Record the browser, date,
 for each section. The automated browser suite covers Chromium desktop, mobile navigation, the theme
 toggle, redirects, the admin sign-in guard, and WCAG A/AA checks; complete the rest by hand.
 
+Current staging URLs (temporary):
+
+- SPA: <https://music-without-borders.vercel.app>
+- API health: <https://api-production-ecd40767.up.railway.app/api/health>
+- Donation API health: <https://donations-production-c25b1981.up.railway.app/health>
+
+The suite can target staging without starting local servers:
+
+```bash
+$env:E2E_BASE_URL = "https://music-without-borders.vercel.app"
+$env:E2E_API_URL = "https://api-production-ecd40767.up.railway.app"
+npm run test:e2e
+```
+
 ## Public site
 
 - [ ] Home loads with **Music Without Borders** in the header and footer, and CMS copy is visible.
@@ -73,8 +87,8 @@ toggle, redirects, the admin sign-in guard, and WCAG A/AA checks; complete the r
 
 ## SEO and content
 
-- [ ] The final domain replaces `musicwithoutborders.example` in `index.html`, `public/robots.txt`,
-      and `public/sitemap.xml`.
+- [ ] The final domain replaces the temporary Vercel URL in `index.html`, `public/robots.txt`, and
+      `public/sitemap.xml`.
 - [ ] Canonical, Open Graph, Twitter, and JSON-LD URLs use the production domain.
 - [ ] `og-image.jpg` and the favicon load over HTTPS.
 - [ ] Page titles describe the page and the brand.

@@ -197,8 +197,8 @@ For a VPS or other PHP host:
 
 The following must be resolved before a production launch:
 
-- Real domain and SEO replacement (`musicwithoutborders.example` is a placeholder; staging uses
-  temporary Railway/Vercel URLs).
+- Real domain and SEO replacement (staging uses temporary Railway/Vercel URLs; the final domain
+  must replace them before launch).
 - Brevo sender and SMTP credentials.
 - Stripe live keys and a live webhook secret.
 - Replace the seeded sample performance schedule and remaining placeholder copy.

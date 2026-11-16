@@ -52,3 +52,6 @@ backend/storage/logs/*
 # Local OpenCode tooling (agent skills and their data files). Not part of the
 # band project — kept on disk, deliberately not published.
 .opencode
+
+.vercel
+.env.local

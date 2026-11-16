@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://musicwithoutborders.example/sitemap.xml
+Sitemap: https://music-without-borders.vercel.app/sitemap.xml

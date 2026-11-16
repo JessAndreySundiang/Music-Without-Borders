@@ -32,4 +32,16 @@ fi
 
 chown -R www-data:www-data storage bootstrap/cache
 
+# The runtime image can expose both mpm_event and mpm_prefork even when the
+# build-time config test saw one. mod_php requires prefork, so enforce it at
+# container start as well. Otherwise Apache exits with "More than one MPM".
+rm -f /etc/apache2/mods-enabled/mpm_event.load /etc/apache2/mods-enabled/mpm_event.conf \
+      /etc/apache2/mods-enabled/mpm_worker.load /etc/apache2/mods-enabled/mpm_worker.conf
+a2enmod mpm_prefork >/dev/null 2>&1 || true
+
+echo "Apache MPM files:"
+ls -1 /etc/apache2/mods-enabled/mpm_* 2>&1 || true
+echo "APACHE_CONFDIR=${APACHE_CONFDIR:-unset} PORT=${PORT}"
+apache2ctl -M 2>&1 | grep -i mpm || true
+
 exec apache2-foreground

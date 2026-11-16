@@ -9,8 +9,21 @@ This runbook deploys the staging/UAT stack without a custom domain:
 | MySQL | Railway MySQL service | managed by Railway |
 | Stripe donation API | Railway | `server/` |
 
+## Current staging deployment
+
+These temporary URLs are live for UAT. Replace them with the final domain before launch.
+
+| Service | URL |
+| --- | --- |
+| SPA | <https://music-without-borders.vercel.app> |
+| Laravel API | <https://api-production-ecd40767.up.railway.app/api> |
+| Laravel health | <https://api-production-ecd40767.up.railway.app/api/health> |
+| Donation API | <https://donations-production-c25b1981.up.railway.app> |
+| Donation health | <https://donations-production-c25b1981.up.railway.app/health> |
+
 The Laravel image runs migrations on boot. The donation API stores donor records and pending
-alerts under `/app/data`, so that path **must** be mounted as a Railway volume.
+alerts under `/app/data`, so that path **must** be mounted as a Railway volume. The donation image's
+entrypoint gives the unprivileged `node` user ownership of that mount before starting the server.
 
 Do not paste secrets into chat, issues, commits, or screenshots. Enter them in the Railway or
 Vercel dashboards, or through their CLIs.
@@ -44,7 +57,9 @@ FRONTEND_URLS=https://GENERATED-VERCEL-DOMAIN
 SANCTUM_EXPIRATION=480
 ADMIN_EMAIL=Communitymusicband@gmail.com
 ADMIN_NAME=Music Without Borders Admin
-ADMIN_RESET_DELIVERY=mail
+# Keep "file" until the Brevo variables below are saved and verified. Then
+# switch to "mail" and redeploy before running admin:setup-link.
+ADMIN_RESET_DELIVERY=file
 LOG_CHANNEL=stderr
 LOG_LEVEL=info
 
@@ -169,7 +184,10 @@ URL directly. `vercel.json` supplies the SPA fallback.
    restriction off deliberately.
 3. Make sure `MAIL_FROM_ADDRESS` (Laravel) and `SMTP_FALLBACK_FROM` (donation API) use the verified
    sender.
-4. Run the setup command in the Laravel service shell, or use the Railway CLI:
+4. Set `ADMIN_RESET_DELIVERY=mail` only after the Brevo variables are saved and the API is
+   redeployed. While it is `file`, the one-time link stays inside the container and must not be
+   copied into chat, logs, or a screenshot.
+5. Run the setup command in the Laravel service shell, or use the Railway CLI:
 
    ```bash
    railway ssh -- php artisan admin:setup-link
@@ -179,7 +197,7 @@ URL directly. `vercel.json` supplies the SPA fallback.
    `Communitymusicband@gmail.com`. It expires in 60 minutes. Never print the link or the admin
    password into chat.
 
-5. Open the link, choose a password of at least 10 characters, and sign in at `/admin/login`.
+6. Open the link, choose a password of at least 10 characters, and sign in at `/admin/login`.
 
 ## 6. Verify before UAT
 
@@ -197,8 +215,8 @@ URL directly. `vercel.json` supplies the SPA fallback.
 
 1. Attach the real domain in Vercel and update `APP_URL`, `FRONTEND_URL`, `FRONTEND_URLS`, and
    `CORS_ORIGINS`.
-2. Replace `musicwithoutborders.example` in `index.html`, `public/robots.txt`, and
-   `public/sitemap.xml`.
+2. Replace the temporary Vercel URL in `index.html`, `public/robots.txt`, and `public/sitemap.xml`
+   with the final domain.
 3. Switch Stripe to live keys and create a live webhook endpoint. Keep the test webhook for
    staging.
 4. Make one small live donation, verify the receipt and ledger, then refund it in Stripe.
