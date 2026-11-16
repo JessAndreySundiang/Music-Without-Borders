@@ -1,17 +1,18 @@
 # Staging and Production Setup
 
-This document is the deployment runbook for the Music Without Borders CMS. It assumes the frontend
-runs on Vercel and the Laravel API plus MySQL run on a separate PHP host. Vercel cannot run Laravel
-or MySQL.
+This document is the host-agnostic deployment runbook for the Music Without Borders CMS. For the
+current staging deployment using Railway and Vercel, follow [`docs/railway.md`](railway.md) first;
+this page documents the environment contract, Brevo/Stripe checks, backups, and rollback. Vercel
+cannot run Laravel, MySQL, or the Stripe donation API.
 
 ## Topology
 
 | Piece | Recommended host | Notes |
 | --- | --- | --- |
 | React SPA | Vercel | Build with `npm run build`, output `dist/`. `vercel.json` adds the SPA fallback and security headers. |
-| Laravel API | Small VPS, Laravel Cloud, or managed PHP host | PHP 8.3+, Composer, writable `backend/storage` and `backend/bootstrap/cache`. Document root is `backend/public`. |
-| MySQL | Same private network as the API, or managed MySQL 8 | Never expose the database port publicly. |
-| Donation API | Same API host or a second small Node process | Node 24+. Keeps Stripe secret keys off the SPA. |
+| Laravel API | Railway (current staging), small VPS, Laravel Cloud, or managed PHP host | PHP 8.3+, Composer, writable `backend/storage` and `backend/bootstrap/cache`. Document root is `backend/public`. |
+| MySQL | Same private network as the API, or Railway MySQL/managed MySQL 8 | Never expose the database port publicly. |
+| Donation API | Railway (current staging) or a second small Node process | Node 24+. Keeps Stripe secret keys off the SPA. Mount persistent storage for the ledger. |
 | Email | Brevo SMTP relay | Verify the sender address and authorize the API host's outbound IP. |
 | DNS/TLS | Your domain registrar plus the hosts | HTTPS is required for Stripe live keys and secure cookies. |
 
@@ -30,6 +31,8 @@ APP_DEBUG=false
 APP_URL=https://api-staging.example.com
 APP_TIMEZONE=Asia/Manila
 FORCE_HTTPS=true
+# Required behind Railway's router so X-Forwarded-Proto/client IP are trusted.
+TRUSTED_PROXIES=*
 FRONTEND_URL=https://staging.example.com
 FRONTEND_URLS=https://staging.example.com
 SANCTUM_EXPIRATION=480
@@ -61,8 +64,9 @@ MAIL_FROM_NAME="${APP_NAME}"
   service deliberately falls back to private storage instead of writing a reset token to a log.
 - `FRONTEND_URL` is used in the reset link. `FRONTEND_URLS` controls CORS and must contain the
   deployed SPA origin.
-- `FORCE_HTTPS=true` adds HSTS even when TLS terminates at a proxy. Also forward the original
-  scheme/IP from the proxy, or Laravel may generate the wrong URLs.
+- `FORCE_HTTPS=true` adds HSTS even when TLS terminates at a proxy. Set `TRUSTED_PROXIES=*` only
+  when the API is reachable exclusively through the platform router (for example Railway), so
+  Laravel reads the original scheme and client IP from `X-Forwarded-*`.
 - Generate `APP_KEY` once and keep it stable. Rotation invalidates signed reset links and encrypted
   data.
 - `SANCTUM_EXPIRATION` is in minutes; `480` is eight hours.
@@ -76,7 +80,8 @@ MAIL_FROM_NAME="${APP_NAME}"
 
 | Variable | Example | Notes |
 | --- | --- | --- |
-| `VITE_API_BASE_URL` | `https://api-staging.example.com/api` | Must include `/api`. |
+| `VITE_API_BASE_URL` | `https://api-staging.example.com/api` | Laravel CMS API; must include `/api`. |
+| `VITE_API_URL` | `https://donations-staging.example.com` | Stripe donation API root; no trailing slash. |
 | `VITE_STRIPE_PUBLISHABLE_KEY` | `pk_test_...` for staging, `pk_live_...` for production | The publishable key is public by design; the secret key belongs only in the donation API. |
 
 Import the repo into Vercel, keep the project root at the repository root, and use the detected Vite
@@ -98,6 +103,12 @@ donation ledger (`server/data`) on persistent storage if the webhook is enabled.
 registered against the deployed URL, not the local `stripe listen` endpoint.
 
 ## Deploy the API
+
+For Railway, use the prepared `backend/Dockerfile` and `backend/railway.json` as described in
+[`docs/railway.md`](railway.md). The image caches config/routes/views, runs migrations on boot, and
+can seed once with `RUN_SEED=true`.
+
+For a VPS or other PHP host:
 
 1. Create the MySQL database and a dedicated user. Grant only the database privileges Laravel needs.
 2. Upload the repository or deploy it with your host's Git integration. Do not upload `.env` files,
@@ -186,10 +197,13 @@ registered against the deployed URL, not the local `stripe listen` endpoint.
 
 The following must be resolved before a production launch:
 
-- Real domain and SEO replacement (`musicwithoutborders.example` is a placeholder).
-- Backend/MySQL host and HTTPS certificates.
+- Real domain and SEO replacement (`musicwithoutborders.example` is a placeholder; staging uses
+  temporary Railway/Vercel URLs).
 - Brevo sender and SMTP credentials.
-- Stripe live keys and webhook secret.
-- At least one reviewed, published Story.
+- Stripe live keys and a live webhook secret.
+- Replace the seeded sample performance schedule and remaining placeholder copy.
 - Final UAT using `docs/uat.md`.
-- A tested database backup and restore.
+- A tested database backup and restore, plus a backup of the donation-ledger volume.
+
+The three launch Stories are approved and seeded as published, non-sample content. Re-check their
+rendering and metadata after deployment; new drafts still require review in the CMS.

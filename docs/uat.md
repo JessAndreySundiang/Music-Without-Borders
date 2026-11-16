@@ -29,12 +29,12 @@ toggle, redirects, the admin sign-in guard, and WCAG A/AA checks; complete the r
 
 ## Stories
 
-- [ ] With no published stories, the empty state appears instead of an error.
-- [ ] Publish a reviewed Story in the CMS.
-- [ ] The Story appears on `/stories` with title, excerpt, cover, author, and date.
+- [ ] The three approved launch Stories appear on `/stories` with title, excerpt (or placeholder
+      artwork), author, and date; no "Sample story" badges are visible.
 - [ ] Story detail opens at `/stories/<slug>` and renders the full body.
-- [ ] Unpublishing the Story removes it from the public list.
+- [ ] Unpublishing a Story removes it from the public list.
 - [ ] A missing Story slug shows a safe not-found state, not a stack trace.
+- [ ] If all Stories are unpublished, the empty state appears instead of an error.
 
 ## Admin workspace
 
@@ -92,6 +92,7 @@ toggle, redirects, the admin sign-in guard, and WCAG A/AA checks; complete the r
 - [ ] MySQL is not reachable from the public internet.
 - [ ] `.env`, `backend/storage`, and `backend/vendor` are not web-accessible.
 - [ ] Brevo and Stripe secrets are stored in the host's secret manager, not the repo.
+- [ ] The Railway donation volume is mounted at `/app/data` and survives a redeploy.
 - [ ] Daily MySQL backups exist and a restore has been tested.
 - [ ] Uptime/error monitoring is configured.
 - [ ] The release can be rolled back to the previous commit and database backup.

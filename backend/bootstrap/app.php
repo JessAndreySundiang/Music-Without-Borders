@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Railway and other reverse proxies terminate TLS and forward the
+        // original scheme/client IP. Trust only when explicitly configured.
+        $middleware->trustProxies(at: env('TRUSTED_PROXIES'));
+
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
         ]);

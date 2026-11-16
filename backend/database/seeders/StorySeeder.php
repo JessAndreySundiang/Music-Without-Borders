@@ -10,7 +10,7 @@ class StorySeeder extends Seeder
 {
     public function run(): void
     {
-        foreach ($this->stories() as $story) {
+        foreach ($this->stories() as $index => $story) {
             Story::query()->updateOrCreate(
                 ['slug' => Str::slug($story['title'])],
                 [
@@ -18,17 +18,20 @@ class StorySeeder extends Seeder
                     'slug' => Str::slug($story['title']),
                     'author_name' => 'Music Without Borders',
                     'author_role' => 'Notes from the Bandstand',
-                    'is_published' => false,
-                    'is_sample' => true,
-                    'published_at' => null,
+                    'is_published' => true,
+                    'is_sample' => false,
+                    'published_at' => now()->startOfDay(),
+                    'sort_order' => $index,
                 ],
             );
         }
     }
 
     /**
-     * These are writing samples for the CMS demo, not real band history. They
-     * stay unpublished until an administrator reviews and publishes them.
+     * These three launch Stories were reviewed and approved for publication.
+     * They are seeded as published, non-sample content so a fresh deployment
+     * has a complete Stories section. Do not re-run this seeder after editing
+     * them in the CMS, because it will overwrite the edited fields.
      *
      * @return array<int, array<string, mixed>>
      */

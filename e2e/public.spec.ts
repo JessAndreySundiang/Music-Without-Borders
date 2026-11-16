@@ -49,6 +49,22 @@ test.describe("public site", () => {
     });
   }
 
+  test("approved Stories open their article pages", async ({ page }) => {
+    await page.goto("/stories");
+
+    const firstCard = page.getByRole("article").first();
+    await expect(firstCard).toBeVisible();
+
+    const title = (await firstCard.getByRole("heading", { level: 2 }).innerText()).trim();
+    expect(title.length).toBeGreaterThan(0);
+
+    await firstCard.getByRole("link", { name: title, exact: true }).click();
+
+    await expect(page).toHaveURL(/\/stories\/[a-z0-9-]+$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
+    await expect(page.getByText("Sample story", { exact: true })).toHaveCount(0);
+  });
+
   test("the legacy blog URL redirects to Stories", async ({ page }) => {
     await page.goto("/blog");
 

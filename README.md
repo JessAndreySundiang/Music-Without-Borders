@@ -114,8 +114,8 @@ soft deletes. The public API only returns visible/published content.
   (`SANCTUM_EXPIRATION=480`). Admins can edit/reorder/hide Home and About sections and items,
   manage Settings, and create/edit/soft-delete performances, testimonials, and Stories.
 - Stories are public at `/stories` and `/stories/:slug`; `/blog` redirects to `/stories`.
-  The three seeded Stories are clearly labelled samples and stay unpublished until an
-  administrator reviews and publishes them.
+  The three launch Stories were reviewed and approved; they are seeded published and marked
+  non-sample. New drafts remain unpublished until an administrator publishes them.
 - The Daytime/Evening palette is defined as semantic tokens in `src/index.css`. Colour
   choices are documented in `design-system/music-without-borders/MASTER.md`.
 
@@ -185,7 +185,8 @@ with the band's real dates before the site is promoted.
 8. **Stories (`/stories` / `Stories.tsx`):**
    - "Notes from the Bandstand" index and article pages driven by the public Stories API.
    - Unpublished drafts stay off the public site; `/blog` redirects to `/stories`.
-   - Seeded sample Stories are labelled in the admin and never published automatically.
+   - The three approved launch Stories are seeded published and non-sample; new drafts are never
+     published automatically.
 
 ---
 
@@ -436,8 +437,9 @@ suite needs no Gmail credentials and never opens an SMTP connection.
 
 The GitHub Actions workflow also runs Gitleaks over the full commit history, a high-severity
 dependency review on pull requests, production dependency audits, MySQL migration/seed smoke tests,
-and the Playwright browser suite. See `docs/staging.md` for the deployment runbook and
-`docs/uat.md` for the manual acceptance checklist.
+and the Playwright browser suite. For the current Railway + Vercel staging deployment, start with
+`docs/railway.md`; `docs/staging.md` covers the host-agnostic environment, Brevo/Stripe, backup,
+and rollback procedures. The manual acceptance checklist is `docs/uat.md`.
 
 ## Project layout
 
@@ -451,17 +453,21 @@ design-system/  the design system the UI follows
 
 ## Before you deploy
 
-The full deployment runbook is in [`docs/staging.md`](docs/staging.md), and the manual acceptance
-checklist is in [`docs/uat.md`](docs/uat.md). The short version:
+The current staging path is [`docs/railway.md`](docs/railway.md) (Railway for Laravel/MySQL and the
+donation API, Vercel for the SPA). The host-agnostic runbook is
+[`docs/staging.md`](docs/staging.md), and the manual acceptance checklist is
+[`docs/uat.md`](docs/uat.md). The short version:
 
 - **Set your real domain.** `musicwithoutborders.example` is a placeholder in `index.html`
-  (canonical, Open Graph, JSON-LD), `public/robots.txt` and `public/sitemap.xml`. Replace it in all
-  three, then swap `og-image.jpg` for a fresh card if the tagline changes.
+  (canonical, Open Graph, JSON-LD), `public/robots.txt` and `public/sitemap.xml`. Staging may use
+  temporary Railway/Vercel URLs, but replace the placeholder before a public launch and then swap
+  `og-image.jpg` for a fresh card if the tagline changes.
 - **Add the real social URLs.** `src/data/landing.ts` currently points the footer icons at each
   platform's home page.
 - Build with `npm run build` and serve `dist/`. Because this is a single-page app, configure your
   host to fall back to `index.html` for unknown paths, or refresh on `/about` will 404.
-- Set `CORS_ORIGINS` to your live origin and use **live** Stripe keys (`pk_live_`/`sk_live_`).
+- Staging uses Stripe test keys (`pk_test_`/`sk_test_`); production uses **live** keys
+  (`pk_live_`/`sk_live_`). Set `CORS_ORIGINS` to the deployed SPA origin for each environment.
   Stripe requires HTTPS for live payments. Both key kinds are accepted: with a live key the API
   prints a warning instead of refusing to start, and alert subjects lose their `[TEST]` prefix.
 - **Set `TRUST_PROXY` if anything sits in front of the API.** Behind nginx, Apache or a platform

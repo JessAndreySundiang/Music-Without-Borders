@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Story;
 use App\Models\User;
+use Database\Seeders\StorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
@@ -53,6 +54,19 @@ class StoriesApiTest extends TestCase
             ->assertJsonPath('data.title', 'The Trumpet Came Back');
 
         $this->getJson('/api/stories/draft-story')->assertNotFound();
+    }
+
+    public function test_the_approved_launch_stories_are_seeded_as_published_and_not_samples(): void
+    {
+        $this->seed(StorySeeder::class);
+
+        $this->assertSame(3, Story::query()->published()->count());
+        $this->assertSame(0, Story::query()->where('is_sample', true)->count());
+        $this->assertDatabaseHas('stories', [
+            'slug' => 'the-saturday-the-trumpet-came-back',
+            'is_published' => true,
+            'is_sample' => false,
+        ]);
     }
 
     public function test_an_admin_can_create_update_and_soft_delete_a_story(): void
