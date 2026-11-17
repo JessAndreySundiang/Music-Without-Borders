@@ -60,6 +60,9 @@ ADMIN_NAME=Music Without Borders Admin
 # Keep "file" until the Brevo variables below are saved and verified. Then
 # switch to "mail" and redeploy before running admin:setup-link.
 ADMIN_RESET_DELIVERY=file
+CACHE_STORE=file
+SESSION_DRIVER=file
+QUEUE_CONNECTION=sync
 LOG_CHANNEL=stderr
 LOG_LEVEL=info
 
@@ -83,6 +86,11 @@ MAIL_FROM_NAME=Music Without Borders
 # overwrite CMS edits.
 RUN_SEED=true
 ```
+
+The `drop_unused_default_tables` migration removes Laravel's database cache, session, queue, and
+password-reset tables. Keep `CACHE_STORE=file`, `SESSION_DRIVER=file`, and `QUEUE_CONNECTION=sync`;
+without them, rate-limited auth routes return 500 because Laravel falls back to a missing `cache`
+table.
 
 Generate `APP_KEY` locally from `backend/`:
 
