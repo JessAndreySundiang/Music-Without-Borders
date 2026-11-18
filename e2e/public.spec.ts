@@ -68,7 +68,10 @@ test.describe("public site", () => {
   test("the footer gives staff a direct route into the CMS", async ({ page }) => {
     await page.goto("/");
 
-    await page.locator("footer").getByRole("link", { name: /Staff login/i }).click();
+    await page
+      .locator("footer")
+      .getByRole("link", { name: /Staff login/i })
+      .click();
 
     await expect(page).toHaveURL(/\/admin\/login$/);
     await expect(

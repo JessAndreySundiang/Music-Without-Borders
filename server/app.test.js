@@ -917,7 +917,12 @@ describe("Brevo HTTPS API transport", () => {
     const transport = createBrevoApiTransport({ apiKey: "bad-key", fetchImpl });
 
     await expect(
-      transport.sendMail({ from: "band@example.com", to: "band@example.com", subject: "x", text: "y" }),
+      transport.sendMail({
+        from: "band@example.com",
+        to: "band@example.com",
+        subject: "x",
+        text: "y",
+      }),
     ).rejects.toThrow(/Brevo API 401.*Key not found/);
   });
 

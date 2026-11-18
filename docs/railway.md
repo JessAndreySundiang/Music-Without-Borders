@@ -57,9 +57,9 @@ FRONTEND_URLS=https://GENERATED-VERCEL-DOMAIN
 SANCTUM_EXPIRATION=480
 ADMIN_EMAIL=Communitymusicband@gmail.com
 ADMIN_NAME=Music Without Borders Admin
-# Keep "file" until BREVO_API_KEY is saved and verified. Then switch to "mail"
-# and redeploy before running admin:setup-link.
-ADMIN_RESET_DELIVERY=file
+# Keep "file" only for local development. Production uses the Brevo API, so set
+# this to "mail" after BREVO_API_KEY is saved and verified, then redeploy.
+ADMIN_RESET_DELIVERY=mail
 CACHE_STORE=file
 SESSION_DRIVER=file
 QUEUE_CONNECTION=sync
@@ -100,8 +100,16 @@ php artisan key:generate --show
 Copy the single output line into the Railway variable. Keep it stable; changing it invalidates
 signed reset links.
 
-Deploy, then generate a public domain under **Settings -> Networking**. Put that HTTPS URL in
-`APP_URL`. The health check is `GET <api-domain>/api/health`; it must return `{"status":"ok"}`.
+Deploy from `backend/`. The `--path-as-root` flag keeps Railpack from treating the repository root
+(the Vite app) as the build context:
+
+```bash
+cd backend
+railway up . --path-as-root --service api
+```
+
+Then generate a public domain under **Settings -> Networking**. Put that HTTPS URL in `APP_URL`.
+The health check is `GET <api-domain>/api/health`; it must return `{"status":"ok"}`.
 The container caches config/routes/views, runs migrations, optionally seeds, then starts Apache on
 Railway's injected `PORT`.
 
@@ -143,6 +151,14 @@ BREVO_API_KEY=<Brevo API v3 key>
 BREVO_FROM=<verified Brevo sender>
 ```
 
+Deploy from `server/`. Use `--path-as-root` for the same reason; without it the CLI can fail with
+`prefix not found` before a deployment is created:
+
+```bash
+cd server
+railway up . --path-as-root --service donations
+```
+
 Generate a public domain for this service too. Its health check is `GET <donation-domain>/health`.
 
 Create the Stripe webhook endpoint at:
@@ -171,7 +187,14 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 `VITE_API_BASE_URL` must include `/api`. `VITE_API_URL` is the donation API root, without a trailing
 slash. The Stripe publishable key is public by design; never put `sk_...` in Vercel.
 
-Deploy, open the generated `*.vercel.app` URL, then go back to Railway:
+Deploy with the Vercel CLI (`npx vercel --prod`) or connect the repository under
+**Project -> Settings -> Git**. The CLI is useful when the Git integration is not attached:
+
+```bash
+npx vercel --prod --yes
+```
+
+Open the generated `*.vercel.app` URL, then go back to Railway:
 
 - Set `FRONTEND_URL` and `FRONTEND_URLS` on the Laravel service to the Vercel URL.
 - Set `CORS_ORIGINS` on the donation service to the Vercel URL.
@@ -190,12 +213,17 @@ container is the network policy, not a bad SMTP password.
 2. Create an **API v3 key** under **Settings -> SMTP & API -> API Keys**. This is
    not the SMTP key. Add it to both Railway services as `BREVO_API_KEY`; never
    commit it or paste it into chat.
-3. Set `MAIL_FROM_ADDRESS` (Laravel) and `BREVO_FROM` (donation API) to the
+3. Under **Account -> Security -> Authorized IPs**, either choose **Automatic
+   authorization** or add Railway's outbound IPs. If "Block unknown IP
+   addresses" is on and the Railway egress IP is missing, Brevo returns
+   `401 ... unrecognised IP address` even though the API key is correct.
+   Automatic authorization is preferred because Railway egress IPs can change.
+4. Set `MAIL_FROM_ADDRESS` (Laravel) and `BREVO_FROM` (donation API) to the
    verified sender.
-4. Set `ADMIN_RESET_DELIVERY=mail` only after `BREVO_API_KEY` is saved, then
+5. Set `ADMIN_RESET_DELIVERY=mail` only after `BREVO_API_KEY` is saved, then
    redeploy the Laravel API. While it is `file`, the one-time link stays inside
    the container and must not be copied into chat, logs, or a screenshot.
-5. Run the setup command in the Laravel service shell, or use the Railway CLI:
+6. Run the setup command in the Laravel service shell, or use the Railway CLI:
 
    ```bash
    railway ssh -- php artisan admin:setup-link
@@ -204,7 +232,7 @@ container is the network policy, not a bad SMTP password.
    With `ADMIN_RESET_DELIVERY=mail`, the one-time link is emailed to
    `Communitymusicband@gmail.com`. It expires in 60 minutes. Never print the link
    or the admin password into chat.
-6. Open the link, choose a password of at least 10 characters, and sign in at
+7. Open the link, choose a password of at least 10 characters, and sign in at
    `/admin/login` (also linked from the public footer as **Staff login**).
 
 To check the donation service's transport locally:
@@ -232,6 +260,7 @@ does not prove the key is valid. Verify with a real test donation.
 - `npm run check-mail` in `server/` lists `Brevo API` first and verifies the key.
 - A forgotten-password request sends a Brevo API email; the link works once and expires after 60
   minutes.
+- Run the MySQL and donation-ledger restore rehearsal in [`docs/backups.md`](backups.md).
 - Complete [`docs/uat.md`](uat.md).
 
 ## 7. Before launch
@@ -244,5 +273,6 @@ does not prove the key is valid. Verify with a real test donation.
    staging.
 4. Make one small live donation, verify the receipt and ledger, then refund it in Stripe.
 5. Set `APP_ENV=production` and keep `APP_DEBUG=false`.
-6. Test a MySQL backup and restore, and back up the Railway donation volume.
+6. Enable Railway **Daily**, **Weekly**, and **Monthly** volume backups for MySQL and donations,
+   then re-run the restore rehearsal in [`docs/backups.md`](backups.md).
 7. Re-run the UAT checklist against the final domain.

@@ -13,7 +13,7 @@ cannot run Laravel, MySQL, or the Stripe donation API.
 | Laravel API | Railway (current staging), small VPS, Laravel Cloud, or managed PHP host | PHP 8.3+, Composer, writable `backend/storage` and `backend/bootstrap/cache`. Document root is `backend/public`. |
 | MySQL | Same private network as the API, or Railway MySQL/managed MySQL 8 | Never expose the database port publicly. |
 | Donation API | Railway (current staging) or a second small Node process | Node 24+. Keeps Stripe secret keys off the SPA. Mount persistent storage for the ledger. |
-| Email | Brevo SMTP relay | Verify the sender address and authorize the API host's outbound IP. |
+| Email | Brevo HTTPS API | Verify the sender address, use an API v3 key, and authorize the API host's outbound IP. Railway blocks outbound SMTP. |
 | DNS/TLS | Your domain registrar plus the hosts | HTTPS is required for Stripe live keys and secure cookies. |
 
 ## Environment
@@ -96,11 +96,15 @@ STRIPE_WEBHOOK_SECRET=whsec_from_stripe_dashboard
 CORS_ORIGINS=https://staging.example.com
 DONATION_NOTIFY_TO=Communitymusicband@gmail.com
 TRUST_PROXY=1
+
+# Production mail over HTTPS. Railway blocks outbound SMTP; use the API v3 key,
+# not the SMTP key.
+BREVO_API_KEY=<Brevo API v3 key>
+BREVO_FROM=Communitymusicband@gmail.com
 ```
 
-For Brevo alerts, use the `SMTP_FALLBACK_*` block documented in `server/.env.example`. Keep the
-donation ledger (`server/data`) on persistent storage if the webhook is enabled. The webhook must be
-registered against the deployed URL, not the local `stripe listen` endpoint.
+Keep the donation ledger (`server/data`) on persistent storage if the webhook is enabled. The
+webhook must be registered against the deployed URL, not the local `stripe listen` endpoint.
 
 ## Deploy the API
 
@@ -154,14 +158,16 @@ For a VPS or other PHP host:
 
 ## Brevo checklist
 
-- Create an SMTP key in Brevo: **Settings -> SMTP & API -> SMTP**. The SMTP login is not always the
-  account email; it often looks like `<id>@smtp-brevo.com`.
-- Verify the sender address under **Senders**.
-- If the account blocks unknown IPs, authorize the API host's outbound IP under
-  **Settings -> Security -> Authorized IPs**, or disable the restriction deliberately.
-- Set `MAIL_FROM_ADDRESS` to the verified sender. A mismatch can make Brevo reject the message.
+- Create an **API v3 key** under **Settings -> SMTP & API -> API Keys**. This is not the SMTP key.
+  Railway blocks outbound SMTP on ports 25, 465, 587, and 2525, so the HTTPS API is the only path.
+- Verify the sender address under **Senders**, then set `MAIL_FROM_ADDRESS` (Laravel) and
+  `BREVO_FROM` (donation API) to it. A mismatch can make Brevo reject the message.
+- If the account blocks unknown IPs, choose **Automatic authorization** or authorize the API host's
+  outbound IP under **Account -> Security -> Authorized IPs**. Without this, Brevo returns
+  `401 ... unrecognised IP address` even with a valid key. Automatic authorization is preferred on
+  Railway because egress IPs can change.
 - Use `php artisan admin:setup-link` or the forgot-password screen to verify delivery.
-- Do not put SMTP keys in `README.md`, CI logs, or screenshots.
+- Do not put API keys in `README.md`, CI logs, or screenshots.
 
 ## Stripe checklist
 
@@ -175,14 +181,15 @@ For a VPS or other PHP host:
 
 ## Backups and monitoring
 
-- Take a daily MySQL backup with a transaction-safe dump, encrypt it, store it off the API host, and
-  keep at least 14 daily and 4 weekly copies.
-- Test a restore into a separate database before launch and after any schema change.
+- Enable Railway **Daily**, **Weekly**, and **Monthly** volume backups for MySQL and the donation
+  volume, and keep an encrypted off-host logical dump as described in [`backups.md`](backups.md).
+- Test a restore into a separate database before launch and after any schema change. The 2026-11-18
+  rehearsal restored 12 MySQL tables with identical row counts and a 4-entry donation ledger.
 - Back up the donation ledger if the webhook is used. It is append-only JSONL and contains personal
   data.
 - Monitor `/api/health`, disk space, PHP error logs, and Brevo/Stripe delivery failures.
 - Keep `APP_DEBUG=false`; never expose stack traces or environment values to users.
-- Rotate the admin password and SMTP/Stripe keys if a device or secret is lost.
+- Rotate the admin password and Brevo/Stripe keys if a device or secret is lost.
 
 ## Rollback
 
@@ -199,11 +206,11 @@ The following must be resolved before a production launch:
 
 - Real domain and SEO replacement (staging uses temporary Railway/Vercel URLs; the final domain
   must replace them before launch).
-- Brevo sender and SMTP credentials.
+- Brevo API v3 key, verified sender, and IP authorization for the API host.
 - Stripe live keys and a live webhook secret.
 - Replace the seeded sample performance schedule and remaining placeholder copy.
 - Final UAT using `docs/uat.md`.
-- A tested database backup and restore, plus a backup of the donation-ledger volume.
+- Railway scheduled backups enabled; the logical restore rehearsal is complete.
 
 The three launch Stories are approved and seeded as published, non-sample content. Re-check their
 rendering and metadata after deployment; new drafts still require review in the CMS.

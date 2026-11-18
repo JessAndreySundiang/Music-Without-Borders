@@ -443,7 +443,8 @@ The GitHub Actions workflow also runs Gitleaks over the full commit history, a h
 dependency review on pull requests, production dependency audits, MySQL migration/seed smoke tests,
 and the Playwright browser suite. For the current Railway + Vercel staging deployment, start with
 `docs/railway.md`; `docs/staging.md` covers the host-agnostic environment, Brevo/Stripe, backup,
-and rollback procedures. The manual acceptance checklist is `docs/uat.md`.
+and rollback procedures. `docs/backups.md` is the MySQL and donation-ledger backup/restore runbook,
+and the manual acceptance checklist is `docs/uat.md`.
 
 ## Project layout
 
@@ -459,8 +460,8 @@ design-system/  the design system the UI follows
 
 The current staging path is [`docs/railway.md`](docs/railway.md) (Railway for Laravel/MySQL and the
 donation API, Vercel for the SPA). The host-agnostic runbook is
-[`docs/staging.md`](docs/staging.md), and the manual acceptance checklist is
-[`docs/uat.md`](docs/uat.md). The short version:
+[`docs/staging.md`](docs/staging.md), [`docs/backups.md`](docs/backups.md) covers backup and
+restore, and the manual acceptance checklist is [`docs/uat.md`](docs/uat.md). The short version:
 
 - **Set your real domain.** `musicwithoutborders.example` is a placeholder in `index.html`
   (canonical, Open Graph, JSON-LD), `public/robots.txt` and `public/sitemap.xml`. Staging may use
