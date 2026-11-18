@@ -127,12 +127,12 @@ Automated and API checks run on 2026-11-18 against the temporary staging URLs:
 | Public site | Playwright Chromium: 21/21 pass, including navigation, `/blog` → `/stories`, footer **Staff login**, theme persistence, mobile menu, 404 |
 | Stories | `/api/stories` returns 3 published Stories with `is_sample: false`; all three detail pages open |
 | Instruments | 17 instrument photographs present in `src/assets/instruments` |
-| Admin | Sign-in guard, invalid-credential message, expired-session redirect, and `?tab=` deep links pass; real CMS CRUD still needs a signed-in editor |
+| Admin | Sign-in guard, invalid-credential message, expired-session redirect, and `?tab=` deep links pass; production `admin:setup-link` delivered a Brevo API email to the administrator address |
 | Accessibility | Automated WCAG A/AA checks pass on public pages and the sign-in page |
 | Security | API and SPA return HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options`, Referrer-Policy, and Permissions-Policy; `/.env`, `/composer.json`, and `/vendor/*` are not exposed; `/storage/*` is denied; CORS allows only the SPA origin |
 | Content | Home has 6 sections / 16 items; About has 8 sections; no sample banners |
 | Backups | MySQL: 12 tables restored with identical row counts. Donation ledger: 4 entries restored, duplicate event ignored, file hash unchanged. See [`backups.md`](backups.md) |
-| Donations | Stripe test donation recorded earlier; alert mail is **blocked** until Brevo's Authorized IPs setting accepts Railway's egress IP |
+| Donations | Stripe test donation recorded; a live Brevo API send from the donation service succeeded (`transports=Brevo API,relay smtp-relay.brevo.com`, `sent=yes`) |
 
 Still manual before launch: sign in as the real editor and exercise CMS create/edit/publish/delete flows,
 request and use a real password-reset email, run a fresh Stripe test donation with a delivered alert,

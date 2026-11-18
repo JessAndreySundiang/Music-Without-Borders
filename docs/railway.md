@@ -194,6 +194,12 @@ Deploy with the Vercel CLI (`npx vercel --prod`) or connect the repository under
 npx vercel --prod --yes
 ```
 
+`npx vercel git connect` fails with *Failed to connect ... make sure there aren't any typos*
+until the Vercel GitHub App is installed for the repository owner. Connect it once in the
+dashboard (**Project -> Settings -> Git -> Connect Git Repository**, which opens the GitHub App
+install flow), then pushes to `main` deploy automatically. Until then, every merge needs a manual
+`npx vercel@latest --prod --yes` from the repository root.
+
 Open the generated `*.vercel.app` URL, then go back to Railway:
 
 - Set `FRONTEND_URL` and `FRONTEND_URLS` on the Laravel service to the Vercel URL.
@@ -213,11 +219,24 @@ container is the network policy, not a bad SMTP password.
 2. Create an **API v3 key** under **Settings -> SMTP & API -> API Keys**. This is
    not the SMTP key. Add it to both Railway services as `BREVO_API_KEY`; never
    commit it or paste it into chat.
-3. Under **Account -> Security -> Authorized IPs**, either choose **Automatic
-   authorization** or add Railway's outbound IPs. If "Block unknown IP
-   addresses" is on and the Railway egress IP is missing, Brevo returns
+3. Under **Account -> Security -> Authorized IPs**, turn off **Block unknown IP
+   addresses** for API keys, or allowlist Railway's outbound IPs. If the block is
+   on and the egress IP is missing, Brevo returns
    `401 ... unrecognised IP address` even though the API key is correct.
-   Automatic authorization is preferred because Railway egress IPs can change.
+
+   Each Railway service has its **own** outbound IP, and the address changes on
+   redeploy. On 2026-11-18 the `api` service egressed from `162.220.234.81` while
+   `donations` egressed from `152.55.180.213`; a key that works from the API
+   still fails from the donation service until that second IP is authorized.
+   Check the current address from the service shell:
+
+   ```bash
+   curl -s https://api.ipify.org
+   ```
+
+   Allowlisting individual addresses is brittle. Prefer disabling the API-keys
+   IP block, or enable Railway **Static Outbound IPs** on both services and
+   allowlist the three fixed addresses.
 4. Set `MAIL_FROM_ADDRESS` (Laravel) and `BREVO_FROM` (donation API) to the
    verified sender.
 5. Set `ADMIN_RESET_DELIVERY=mail` only after `BREVO_API_KEY` is saved, then
