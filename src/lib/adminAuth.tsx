@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { fetchAdminMe, getAdminToken, loginAdmin, logoutAdmin, setAdminToken } from "./adminApi";
+import {
+  ADMIN_UNAUTHORIZED_EVENT,
+  fetchAdminMe,
+  getAdminToken,
+  loginAdmin,
+  logoutAdmin,
+  setAdminToken,
+} from "./adminApi";
 import {
   AdminAuthContext,
   useAdminAuth,
@@ -38,6 +45,19 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // A 401 from any authenticated request means the 8-hour token expired or was
+  // revoked. Drop the session immediately so RequireAdmin can return the editor
+  // to sign-in instead of leaving a dashboard full of failed requests.
+  useEffect(() => {
+    const onUnauthorized = () => {
+      setUser(null);
+      setStatus("anonymous");
+    };
+
+    window.addEventListener(ADMIN_UNAUTHORIZED_EVENT, onUnauthorized);
+    return () => window.removeEventListener(ADMIN_UNAUTHORIZED_EVENT, onUnauthorized);
+  }, []);
+
   const login = useCallback(async (email: string, password: string) => {
     const admin = await loginAdmin(email, password);
     setUser(admin);
@@ -67,7 +87,11 @@ export function RequireAdmin({ children }: { children: ReactNode }) {
 
   if (status === "loading") {
     return (
-      <div className="grid min-h-screen place-items-center bg-paper" role="status">
+      <div
+        className="grid min-h-screen place-items-center bg-paper"
+        role="status"
+        data-state="checking-session"
+      >
         <div className="text-center">
           <span className="mx-auto block size-10 animate-spin rounded-full border-2 border-line border-t-brass" />
           <p className="mt-4 text-sm font-semibold text-muted">Checking your session…</p>

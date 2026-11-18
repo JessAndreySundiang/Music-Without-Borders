@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PageHero from "../components/PageHero";
 import {
@@ -13,8 +13,8 @@ import {
 import SampleNotice from "../components/cms/SampleNotice";
 import { fetchPerformances } from "../lib/api";
 import { eventDateParts, formatTime } from "../lib/events";
+import { usePageContent } from "../lib/usePageContent";
 import { usePageMeta } from "../lib/usePageTitle";
-import type { Performance } from "../types/Performance";
 
 const eventTypeColors: Record<string, string> = {
   Concert: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
@@ -34,50 +34,10 @@ export function IndexPage() {
       "All Music Without Borders concerts and outreach events are free and open to everyone.",
   });
 
-  const [performances, setPerformances] = useState<Performance[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, loading, error, reload } = usePageContent(fetchPerformances);
+  const performances = useMemo(() => data ?? [], [data]);
   const [selectedType, setSelectedType] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await fetchPerformances();
-      setPerformances(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load performances");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    // Load once on mount. Keeping the initial state in `useState` means the
-    // effect never has to set state synchronously before the request starts.
-    fetchPerformances()
-      .then((data) => {
-        if (!cancelled) {
-          setPerformances(data);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load performances");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const eventTypes = useMemo(() => {
     const types = new Set<string>();
@@ -110,7 +70,18 @@ export function IndexPage() {
         text="All Music Without Borders concerts and outreach events are free and open to everyone. Bring a friend, a chair, and your love of music."
       />
 
-      <section className="band bg-paper min-h-[60vh]">
+      <section
+        className="band bg-paper min-h-[60vh]"
+        data-state={
+          loading
+            ? "loading"
+            : error
+              ? "error"
+              : filteredPerformances.length === 0
+                ? "empty"
+                : "ready"
+        }
+      >
         <div className="mx-auto w-full max-w-6xl px-5 py-12 md:py-16">
           <SampleNotice className="mb-8" />
 
@@ -176,7 +147,7 @@ export function IndexPage() {
               </p>
               <button
                 type="button"
-                onClick={loadData}
+                onClick={reload}
                 className="mt-6 inline-flex items-center gap-2 rounded-full bg-brass-bright px-6 py-2.5 text-sm font-bold text-night-950 shadow-md transition-all hover:bg-amber-300"
               >
                 Try Again

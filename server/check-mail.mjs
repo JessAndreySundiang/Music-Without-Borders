@@ -24,6 +24,7 @@ const settings = [
   ["GMAIL_USER", process.env.GMAIL_USER, true],
   ["GMAIL_APP_PASSWORD", process.env.GMAIL_APP_PASSWORD, false],
   ["DONATION_NOTIFY_TO", process.env.DONATION_NOTIFY_TO, true],
+  ["BREVO_API_KEY", process.env.BREVO_API_KEY, false],
   ["SMTP_FALLBACK_HOST", process.env.SMTP_FALLBACK_HOST, true],
   ["SMTP_FALLBACK_PORT", process.env.SMTP_FALLBACK_PORT, true],
   ["SMTP_FALLBACK_USER", process.env.SMTP_FALLBACK_USER, true],

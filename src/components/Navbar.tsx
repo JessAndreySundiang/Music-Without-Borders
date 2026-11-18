@@ -107,6 +107,7 @@ function Navbar() {
           id="primary-navigation"
           inert={!open}
           aria-hidden={!open}
+          data-state={open ? "open" : "closed"}
           className={`mt-2 overflow-hidden rounded-2xl border bg-nav backdrop-blur-xl transition-all duration-300 lg:hidden ${
             open
               ? "max-h-[30rem] border-nav-line opacity-100"

@@ -57,8 +57,8 @@ FRONTEND_URLS=https://GENERATED-VERCEL-DOMAIN
 SANCTUM_EXPIRATION=480
 ADMIN_EMAIL=Communitymusicband@gmail.com
 ADMIN_NAME=Music Without Borders Admin
-# Keep "file" until the Brevo variables below are saved and verified. Then
-# switch to "mail" and redeploy before running admin:setup-link.
+# Keep "file" until BREVO_API_KEY is saved and verified. Then switch to "mail"
+# and redeploy before running admin:setup-link.
 ADMIN_RESET_DELIVERY=file
 CACHE_STORE=file
 SESSION_DRIVER=file
@@ -73,12 +73,11 @@ DB_DATABASE=${{MySQL.MYSQLDATABASE}}
 DB_USERNAME=${{MySQL.MYSQLUSER}}
 DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
 
-MAIL_MAILER=smtp
-MAIL_HOST=smtp-relay.brevo.com
-MAIL_PORT=587
-MAIL_SCHEME=null
-MAIL_USERNAME=<Brevo SMTP login>
-MAIL_PASSWORD=<Brevo SMTP key>
+# Railway blocks outbound SMTP on every port, so Laravel uses Brevo's HTTPS API.
+# Create an API v3 key under Settings -> SMTP & API -> API Keys. This is NOT the
+# SMTP key, and it must be a verified sender address.
+MAIL_MAILER=brevo
+BREVO_API_KEY=<Brevo API v3 key>
 MAIL_FROM_ADDRESS=<verified Brevo sender>
 MAIL_FROM_NAME=Music Without Borders
 
@@ -138,13 +137,10 @@ PENDING_ALERTS_FILE=/app/data/pending-alerts.jsonl
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
-# Optional Brevo alert delivery; same verified sender as the Laravel API.
-SMTP_FALLBACK_HOST=smtp-relay.brevo.com
-SMTP_FALLBACK_PORT=587
-SMTP_FALLBACK_USER=<Brevo SMTP login>
-SMTP_FALLBACK_PASSWORD=<Brevo SMTP key>
-SMTP_FALLBACK_FROM=<verified Brevo sender>
-SMTP_FALLBACK_SECURE=false
+# Brevo alert delivery over HTTPS. Same API v3 key and verified sender as the
+# Laravel API. Do not use SMTP_FALLBACK_* on Railway: outbound SMTP is blocked.
+BREVO_API_KEY=<Brevo API v3 key>
+BREVO_FROM=<verified Brevo sender>
 ```
 
 Generate a public domain for this service too. Its health check is `GET <donation-domain>/health`.
@@ -186,15 +182,19 @@ URL directly. `vercel.json` supplies the SPA fallback.
 
 ## 5. Brevo and the first admin
 
-1. In Brevo, verify the sender address and create an SMTP key under **Settings -> SMTP & API ->
-   SMTP**. The SMTP login is often `<id>@smtp-brevo.com`, not the account email.
-2. If the account restricts sending IPs, authorize the Railway services' outbound IPs or turn the
-   restriction off deliberately.
-3. Make sure `MAIL_FROM_ADDRESS` (Laravel) and `SMTP_FALLBACK_FROM` (donation API) use the verified
-   sender.
-4. Set `ADMIN_RESET_DELIVERY=mail` only after the Brevo variables are saved and the API is
-   redeployed. While it is `file`, the one-time link stays inside the container and must not be
-   copied into chat, logs, or a screenshot.
+Railway blocks outbound SMTP on every port (including 587 and 465), so production
+mail uses Brevo's **HTTPS API**, not SMTP. A connection timeout from the Railway
+container is the network policy, not a bad SMTP password.
+
+1. In Brevo, verify the sender address under **Senders**.
+2. Create an **API v3 key** under **Settings -> SMTP & API -> API Keys**. This is
+   not the SMTP key. Add it to both Railway services as `BREVO_API_KEY`; never
+   commit it or paste it into chat.
+3. Set `MAIL_FROM_ADDRESS` (Laravel) and `BREVO_FROM` (donation API) to the
+   verified sender.
+4. Set `ADMIN_RESET_DELIVERY=mail` only after `BREVO_API_KEY` is saved, then
+   redeploy the Laravel API. While it is `file`, the one-time link stays inside
+   the container and must not be copied into chat, logs, or a screenshot.
 5. Run the setup command in the Laravel service shell, or use the Railway CLI:
 
    ```bash
@@ -202,10 +202,23 @@ URL directly. `vercel.json` supplies the SPA fallback.
    ```
 
    With `ADMIN_RESET_DELIVERY=mail`, the one-time link is emailed to
-   `Communitymusicband@gmail.com`. It expires in 60 minutes. Never print the link or the admin
-   password into chat.
+   `Communitymusicband@gmail.com`. It expires in 60 minutes. Never print the link
+   or the admin password into chat.
+6. Open the link, choose a password of at least 10 characters, and sign in at
+   `/admin/login` (also linked from the public footer as **Staff login**).
 
-6. Open the link, choose a password of at least 10 characters, and sign in at `/admin/login`.
+To check the donation service's transport locally:
+
+```bash
+cd server
+npm run check-mail
+npm run check-mail -- --send
+```
+
+`Brevo API` should appear first when `BREVO_API_KEY` is set. On Railway, the
+`/health` payload reports `mail: true` when an alert transport is configured; it
+does not prove the key is valid. Verify with a real test donation.
+
 
 ## 6. Verify before UAT
 
@@ -214,8 +227,10 @@ URL directly. `vercel.json` supplies the SPA fallback.
 - `GET <donation>/health` is green.
 - A Stripe test donation succeeds with card `4242 4242 4242 4242`, any future date, any CVC.
 - The test donation appears in the Railway volume at `/app/data/donations.jsonl`.
-- The donation alert email arrives (or is queued in `/app/data/pending-alerts.jsonl`).
-- A forgotten-password request sends a Brevo email; the link works once and expires after 60
+- The donation alert email arrives via Brevo's HTTPS API (or is queued in
+  `/app/data/pending-alerts.jsonl`).
+- `npm run check-mail` in `server/` lists `Brevo API` first and verifies the key.
+- A forgotten-password request sends a Brevo API email; the link works once and expires after 60
   minutes.
 - Complete [`docs/uat.md`](uat.md).
 

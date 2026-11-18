@@ -207,7 +207,18 @@ function Donate() {
 
           {/* Checkout */}
           <aside className="order-1 lg:sticky lg:order-2 lg:top-24">
-            <div className="overflow-hidden rounded-3xl border border-line bg-surface shadow-xl shadow-night-950/5">
+            <div
+              className="overflow-hidden rounded-3xl border border-line bg-surface shadow-xl shadow-night-950/5"
+              data-state={
+                donation
+                  ? "paid"
+                  : !hasStripeKey
+                    ? "unconfigured"
+                    : processing
+                      ? "processing"
+                      : "collecting"
+              }
+            >
               <div className="border-b border-line bg-paper px-6 py-5 sm:px-8">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brass">

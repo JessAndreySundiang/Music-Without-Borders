@@ -2,7 +2,7 @@ import { IconAlert, IconMusic, IconSpinner } from "../Icons";
 
 export function PageLoading({ label = "Loading the latest from the band…" }: { label?: string }) {
   return (
-    <section className="band bg-paper" aria-busy="true" aria-live="polite">
+    <section className="band bg-paper" aria-busy="true" aria-live="polite" data-state="loading">
       <div className="mx-auto w-full max-w-6xl px-5 py-24">
         <div className="flex items-center gap-3 text-sm font-semibold text-muted">
           <IconSpinner className="size-5 animate-spin text-brass" />
@@ -35,7 +35,7 @@ export function PageEmpty({
   message?: string;
 }) {
   return (
-    <section className="band bg-paper">
+    <section className="band bg-paper" data-state="empty">
       <div className="mx-auto w-full max-w-2xl px-5 py-24">
         <div className="rounded-3xl border border-dashed border-line bg-surface p-8 text-center shadow-sm">
           <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-brass/10 text-brass">
@@ -57,7 +57,7 @@ export function PageError({
   onRetry,
 }: PageErrorProps) {
   return (
-    <section className="band bg-paper">
+    <section className="band bg-paper" data-state="error">
       <div className="mx-auto w-full max-w-2xl px-5 py-24">
         <div className="rounded-3xl border border-line bg-surface p-8 shadow-sm">
           <span className="grid size-12 place-items-center rounded-2xl bg-plume/10 text-plume">

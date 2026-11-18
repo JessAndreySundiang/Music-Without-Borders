@@ -105,7 +105,7 @@ function Stories() {
           message="Our volunteers are gathering notes from rehearsals and concerts. Please check back soon."
         />
       ) : (
-        <section className="band bg-paper">
+        <section className="band bg-paper" data-state="ready">
           <div className="mx-auto w-full max-w-6xl px-5 py-16 md:py-20">
             <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
               <div>

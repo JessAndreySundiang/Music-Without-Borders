@@ -69,9 +69,95 @@ function createRelayTransport({ host, port, secure, user, password }) {
   });
 }
 
+/** Brevo's HTTPS API, used because Railway blocks every outbound SMTP port. */
+const BREVO_API = "https://api.brevo.com/v3";
+
+/** Turns "Band <band@example.com>" into the shape Brevo's API expects. */
+function parseFrom(address) {
+  const value = address?.trim() || "no-reply@localhost";
+  const match = value.match(/^(.*?)\s*<([^>]+)>$/);
+
+  if (match) {
+    return { name: match[1].trim() || "Music Without Borders", email: match[2].trim() };
+  }
+
+  return { name: "Music Without Borders", email: value };
+}
+
 /**
- * Sends the band an email when a donation is confirmed, trying Gmail first and a
- * configured relay second, so one provider going down cannot silence the alerts.
+ * Sends through Brevo's transaction API instead of SMTP. The transport mirrors
+ * the small surface `createMailer` needs (`sendMail`, `verify`, `close`) so it
+ * can sit beside the nodemailer transports in the failover chain.
+ *
+ * `fetchImpl` is injectable so tests can prove the request body and error
+ * handling without a network call or a real key.
+ */
+export function createBrevoApiTransport({
+  apiKey,
+  fetchImpl = globalThis.fetch,
+  timeoutMs = 15_000,
+} = {}) {
+  if (!apiKey) throw new Error("Brevo API transport needs an API key.");
+
+  const headers = {
+    "api-key": apiKey,
+    accept: "application/json",
+  };
+
+  async function failure(response) {
+    const detail = await response.text?.().catch(() => "");
+    return new Error(
+      `Brevo API ${response.status}${detail ? `: ${String(detail).slice(0, 300)}` : ""}`,
+    );
+  }
+
+  return {
+    async sendMail(mail) {
+      const payload = {
+        sender: parseFrom(mail.from),
+        to: [{ email: mail.to }],
+        subject: mail.subject,
+        textContent: mail.text,
+      };
+
+      if (mail.replyTo) payload.replyTo = { email: mail.replyTo };
+
+      const response = await fetchImpl(`${BREVO_API}/smtp/email`, {
+        method: "POST",
+        headers: { ...headers, "content-type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+
+      if (!response.ok) throw await failure(response);
+
+      return response.json?.().catch(() => ({}));
+    },
+
+    // There is no login handshake over HTTPS, so checking the account endpoint
+    // is the closest equivalent to nodemailer's verify(). Send-only keys are
+    // valid but forbidden from reading the account (403), so treat that as a
+    // pass while still failing a bad key (401).
+    async verify() {
+      const response = await fetchImpl(`${BREVO_API}/account`, {
+        headers,
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+
+      if (response.status === 403) return true;
+      if (!response.ok) throw await failure(response);
+
+      return true;
+    },
+
+    async close() {},
+  };
+}
+
+/**
+ * Sends the band an email when a donation is confirmed. Brevo's HTTPS API is
+ * tried first when configured (Railway blocks SMTP), then Gmail, then a relay,
+ * so one provider going down cannot silence the alerts.
  *
  * Returns null when no transport is configured, so the rest of the server runs
  * unchanged (the same way a missing webhook secret simply switches the ledger
@@ -79,19 +165,29 @@ function createRelayTransport({ host, port, secure, user, password }) {
  * as a reason to answer Stripe with a non-2xx: the donation is already recorded,
  * so a non-2xx would only make Stripe replay an event the ledger then discards.
  *
- * `transport` and `fallbackTransport` replace the real nodemailer clients, which
- * is how the tests exercise the chain without opening an SMTP connection.
+ * `transport`, `brevoTransport`, and `fallbackTransport` replace the real
+ * clients, which is how the tests exercise the chain without opening a socket.
  */
 export function createMailer({
   user,
   appPassword,
   notifyTo,
+  brevo,
   fallback,
   transport,
+  brevoTransport,
   fallbackTransport,
   logger = console,
 } = {}) {
   const chain = [];
+
+  if (brevo?.apiKey) {
+    chain.push({
+      label: "Brevo API",
+      from: brevo.from || notifyTo,
+      client: brevoTransport ?? createBrevoApiTransport({ apiKey: brevo.apiKey }),
+    });
+  }
 
   if (user && appPassword) {
     chain.push({
@@ -114,7 +210,7 @@ export function createMailer({
 
   if (!chain.length) return null;
 
-  const to = notifyTo || user || relay?.user;
+  const to = notifyTo || user || relay?.user || brevo?.from;
   if (!to) {
     logger.warn("No DONATION_NOTIFY_TO (or GMAIL_USER) set, so donation alerts have no recipient.");
     return null;
@@ -184,6 +280,10 @@ export function createMailerFromEnv(env = process.env, logger = console) {
     user: env.GMAIL_USER,
     appPassword: env.GMAIL_APP_PASSWORD,
     notifyTo: env.DONATION_NOTIFY_TO,
+    brevo: {
+      apiKey: env.BREVO_API_KEY,
+      from: env.BREVO_FROM || env.SMTP_FALLBACK_FROM || env.MAIL_FROM_ADDRESS,
+    },
     fallback: {
       host: env.SMTP_FALLBACK_HOST,
       port: Number(env.SMTP_FALLBACK_PORT) || 587,

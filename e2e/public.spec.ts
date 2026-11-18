@@ -65,6 +65,17 @@ test.describe("public site", () => {
     await expect(page.getByText("Sample story", { exact: true })).toHaveCount(0);
   });
 
+  test("the footer gives staff a direct route into the CMS", async ({ page }) => {
+    await page.goto("/");
+
+    await page.locator("footer").getByRole("link", { name: /Staff login/i }).click();
+
+    await expect(page).toHaveURL(/\/admin\/login$/);
+    await expect(
+      page.getByRole("heading", { level: 1, name: /Welcome back to the bandstand/i }),
+    ).toBeVisible();
+  });
+
   test("the legacy blog URL redirects to Stories", async ({ page }) => {
     await page.goto("/blog");
 

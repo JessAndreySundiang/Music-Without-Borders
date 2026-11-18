@@ -270,6 +270,15 @@ function CheckoutForm({
     <form
       className="grid gap-6 px-6 py-7 sm:px-8"
       aria-busy={processing}
+      data-state={
+        processing
+          ? "processing"
+          : error || problems.length > 0
+            ? "needs-attention"
+            : paymentReady
+              ? "ready"
+              : "loading-payment"
+      }
       noValidate
       onSubmit={handleSubmit}
     >

@@ -12,7 +12,12 @@ import {
 } from "./app.js";
 import { createAlertQueue } from "./alert-queue.js";
 import { createDonationStore } from "./donations.js";
-import { buildDonationAlert, createMailer, createMailerFromEnv } from "./mailer.js";
+import {
+  buildDonationAlert,
+  createBrevoApiTransport,
+  createMailer,
+  createMailerFromEnv,
+} from "./mailer.js";
 
 const silentLogger = { log() {}, warn() {}, error() {} };
 
@@ -848,6 +853,12 @@ describe("createMailerFromEnv", () => {
     expect(mailer.to).toBe("treasurer@gmail.com");
   });
 
+  it("puts the Brevo HTTPS API ahead of every SMTP transport", () => {
+    const mailer = createMailerFromEnv({ ...env, BREVO_API_KEY: "xkeysib-test" }, silentLogger);
+
+    expect(mailer.transports).toEqual(["Brevo API", "Gmail", "relay smtp-relay.brevo.com"]);
+  });
+
   it("supports the relay on its own, which is the Brevo-only setup", () => {
     const mailer = createMailerFromEnv(
       { ...env, GMAIL_USER: "", GMAIL_APP_PASSWORD: "" },
@@ -859,6 +870,100 @@ describe("createMailerFromEnv", () => {
 
   it("treats an empty environment as no mail at all", () => {
     expect(createMailerFromEnv({}, silentLogger)).toBeNull();
+  });
+});
+
+describe("Brevo HTTPS API transport", () => {
+  const fetchOk = () =>
+    vi.fn(async () => ({
+      ok: true,
+      status: 201,
+      json: async () => ({ messageId: "brevo-message-id" }),
+      text: async () => "",
+    }));
+
+  it("sends the alert through Brevo's transactional API", async () => {
+    const fetchImpl = fetchOk();
+    const transport = createBrevoApiTransport({ apiKey: "xkeysib-test", fetchImpl });
+
+    await transport.sendMail({
+      from: "Music Without Borders <band@example.com>",
+      to: "band@example.com",
+      replyTo: "donor@example.com",
+      subject: "Donation received",
+      text: "A donation was confirmed.",
+    });
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    const [url, options] = fetchImpl.mock.calls[0];
+    expect(url).toBe("https://api.brevo.com/v3/smtp/email");
+    expect(options.headers["api-key"]).toBe("xkeysib-test");
+    expect(JSON.parse(options.body)).toEqual({
+      sender: { name: "Music Without Borders", email: "band@example.com" },
+      to: [{ email: "band@example.com" }],
+      replyTo: { email: "donor@example.com" },
+      subject: "Donation received",
+      textContent: "A donation was confirmed.",
+    });
+  });
+
+  it("reports Brevo's status and message when the API refuses a send", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: false,
+      status: 401,
+      json: async () => ({}),
+      text: async () => '{"message":"Key not found"}',
+    }));
+    const transport = createBrevoApiTransport({ apiKey: "bad-key", fetchImpl });
+
+    await expect(
+      transport.sendMail({ from: "band@example.com", to: "band@example.com", subject: "x", text: "y" }),
+    ).rejects.toThrow(/Brevo API 401.*Key not found/);
+  });
+
+  it("verifies the key against the account endpoint", async () => {
+    const fetchImpl = fetchOk();
+    const transport = createBrevoApiTransport({ apiKey: "xkeysib-test", fetchImpl });
+
+    await expect(transport.verify()).resolves.toBe(true);
+    expect(fetchImpl.mock.calls[0][0]).toBe("https://api.brevo.com/v3/account");
+  });
+
+  it("accepts a send-only key that cannot read the account", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: false,
+      status: 403,
+      json: async () => ({}),
+      text: async () => '{"message":"api key is not authorized for resource \\"account\\""}',
+    }));
+    const transport = createBrevoApiTransport({ apiKey: "xkeysib-send-only", fetchImpl });
+
+    await expect(transport.verify()).resolves.toBe(true);
+  });
+
+  it("rejects a key Brevo does not recognise", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: false,
+      status: 401,
+      json: async () => ({}),
+      text: async () => '{"message":"Key not found"}',
+    }));
+    const transport = createBrevoApiTransport({ apiKey: "bad-key", fetchImpl });
+
+    await expect(transport.verify()).rejects.toThrow(/Brevo API 401.*Key not found/);
+  });
+
+  it("is preferred over SMTP transports when a key is configured", () => {
+    const brevoTransport = { sendMail: vi.fn(), verify: vi.fn(), close: vi.fn() };
+    const mailer = createMailer({
+      notifyTo: "band@example.com",
+      brevo: { apiKey: "xkeysib-test", from: "band@example.com" },
+      brevoTransport,
+      logger: silentLogger,
+    });
+
+    expect(mailer.transports).toEqual(["Brevo API"]);
+    expect(mailer.to).toBe("band@example.com");
   });
 });
 

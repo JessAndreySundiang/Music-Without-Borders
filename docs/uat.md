@@ -25,6 +25,7 @@ npm run test:e2e
 - [ ] `/schedule` loads the performances page.
 - [ ] `/blog` redirects to `/stories`.
 - [ ] Deep links to `/about`, `/stories`, and `/admin/login` work after a hard refresh.
+- [ ] The footer **Staff login** button opens `/admin/login` from any public page.
 - [ ] Unknown URLs show the 404 page with working links.
 - [ ] Light and dark themes are readable, and the choice survives a refresh.
 - [ ] Mobile menu opens, closes with Escape, navigates, and does not overflow horizontally.
@@ -55,6 +56,8 @@ npm run test:e2e
 - [ ] `/admin` redirects to `/admin/login` when signed out.
 - [ ] A wrong password shows a generic error, not a different message for known and unknown emails.
 - [ ] A valid admin can sign in; the token is stored and `/admin/me` succeeds.
+- [ ] `/admin?tab=stories` opens the Stories tab directly and survives a refresh.
+- [ ] The active tab is reflected in the URL; an invalid `tab` value falls back to Overview.
 - [ ] Admin can edit and reorder Home and About sections, hide/show items, and save settings.
 - [ ] Admin can create, edit, publish, unpublish, reorder, and soft-delete performances.
 - [ ] Admin can create, edit, publish, unpublish, and soft-delete testimonials.
@@ -65,7 +68,8 @@ npm run test:e2e
 ## Password reset
 
 - [ ] **Forgot password** always returns the same message for known and unknown addresses.
-- [ ] With `ADMIN_RESET_DELIVERY=mail`, the Brevo email arrives with a working link.
+- [ ] With `ADMIN_RESET_DELIVERY=mail`, the Brevo **API** email arrives with a working link
+      (Railway blocks SMTP, so the API key is required, not the SMTP key).
 - [ ] The link opens `/admin/reset-password` and accepts a password of at least 10 characters.
 - [ ] The link works once, then fails with a clear message.
 - [ ] A link older than 60 minutes fails.
@@ -79,7 +83,9 @@ npm run test:e2e
 - [ ] Staging uses `pk_test_` / `sk_test_`; production uses live keys immediately before launch.
 - [ ] A test donation succeeds and the receipt shows the correct amount and donor details.
 - [ ] The donation appears in the ledger.
-- [ ] The donation alert email reaches the configured inbox.
+- [ ] The donation alert email reaches the configured inbox via the Brevo HTTPS API.
+- [ ] `server/npm run check-mail` lists `Brevo API` first and verifies successfully.
+- [ ] A deliberately failed alert is queued and later delivered after the transport is fixed.
 - [ ] The Stripe webhook signature is accepted and duplicate delivery is idempotent.
 - [ ] Invalid amounts and expired/declined cards show a useful message.
 - [ ] The live smoke donation succeeds and is refunded in Stripe.
@@ -105,7 +111,8 @@ npm run test:e2e
 - [ ] `/api/health` is green; `/up` is green.
 - [ ] MySQL is not reachable from the public internet.
 - [ ] `.env`, `backend/storage`, and `backend/vendor` are not web-accessible.
-- [ ] Brevo and Stripe secrets are stored in the host's secret manager, not the repo.
+- [ ] Brevo and Stripe secrets are stored in the host's secret manager, not the repo; the Brevo
+      credential used by Railway is an API v3 key, not an SMTP key.
 - [ ] The Railway donation volume is mounted at `/app/data` and survives a redeploy.
 - [ ] Daily MySQL backups exist and a restore has been tested.
 - [ ] Uptime/error monitoring is configured.

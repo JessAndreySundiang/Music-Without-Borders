@@ -18,6 +18,13 @@ import type {
 
 const TOKEN_KEY = "mwb-admin-token";
 
+/**
+ * Lets the auth provider react when any authenticated request discovers an
+ * expired or revoked token. Without this, the dashboard would keep its
+ * "authenticated" shell and show a pile of request errors.
+ */
+export const ADMIN_UNAUTHORIZED_EVENT = "mwb:admin-unauthorized";
+
 export class AdminApiError extends Error {
   status: number;
   errors: Record<string, string[]>;
@@ -60,6 +67,8 @@ async function adminRequest<T>(path: string, options: RequestOptions = {}): Prom
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
   if (options.auth !== false && token) headers.Authorization = `Bearer ${token}`;
 
+  const usedToken = options.auth !== false && Boolean(token);
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method ?? "GET",
     headers,
@@ -72,7 +81,12 @@ async function adminRequest<T>(path: string, options: RequestOptions = {}): Prom
   } | null;
 
   if (!response.ok) {
-    if (response.status === 401) setAdminToken(null);
+    if (response.status === 401) {
+      setAdminToken(null);
+      // A failed sign-in also returns 401; only an authenticated request means
+      // an existing session has ended.
+      if (usedToken) window.dispatchEvent(new Event(ADMIN_UNAUTHORIZED_EVENT));
+    }
 
     throw new AdminApiError(
       payload?.message ?? `Request failed (HTTP ${response.status}).`,

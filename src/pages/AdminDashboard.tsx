@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
 import {
   IconArrowLeft,
@@ -75,6 +75,11 @@ const tabs: Array<{ id: Tab; label: string; icon: typeof IconMusic }> = [
   { id: "stories", label: "Stories", icon: IconMusic },
   { id: "settings", label: "Site settings", icon: IconKey },
 ];
+
+/** The URL is the source of truth for the active tab, so refreshes and deep links agree. */
+function tabFromParam(value: string | null): Tab {
+  return tabs.some((entry) => entry.id === value) ? (value as Tab) : "overview";
+}
 
 function AdminNotice({
   tone = "success",
@@ -1573,7 +1578,15 @@ function AdminDashboard() {
   usePageTitle("CMS dashboard");
   const { user, logout } = useAdminAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = tabFromParam(searchParams.get("tab"));
+
+  const setTab = useCallback(
+    (next: Tab) => {
+      setSearchParams(next === "overview" ? {} : { tab: next }, { replace: true });
+    },
+    [setSearchParams],
+  );
 
   const onLogout = async () => {
     await logout();
@@ -1583,7 +1596,7 @@ function AdminDashboard() {
   const active = tabs.find((entry) => entry.id === tab) ?? tabs[0];
 
   return (
-    <div className="min-h-screen bg-paper text-body">
+    <div className="min-h-screen bg-paper text-body" data-active-tab={tab}>
       <header className="sticky top-0 z-30 border-b border-line bg-surface/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link to="/admin" className="flex min-w-0 items-center gap-2.5">

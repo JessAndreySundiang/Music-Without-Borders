@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { IconClock, IconMapPin, IconPhone } from "./Icons";
+import { IconClock, IconLock, IconMapPin, IconPhone } from "./Icons";
 import { legalLinks, navItems, socials } from "../data/landing";
 import { useSiteSettings } from "../lib/siteSettingsContext";
 import logo from "../assets/logo.svg";
@@ -99,7 +99,16 @@ function Footer() {
 
         <div className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>{get("footer.copyright")}</p>
-          <ul className="flex items-center gap-5">
+          <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <li>
+              <Link
+                to="/admin/login"
+                className={`inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 font-medium text-muted transition-colors duration-200 hover:border-brass hover:text-brass ${linkFocus}`}
+              >
+                <IconLock className="size-3.5" />
+                Staff login
+              </Link>
+            </li>
             {legalLinks.map((item) => (
               <li key={item.to}>
                 <Link

@@ -104,12 +104,14 @@ soft deletes. The public API only returns visible/published content.
 - Run `php artisan admin:setup-link` from `backend/` to create the account (if needed) and
   deliver a signed, single-use setup link. Locally it is written to
   `backend/storage/app/private/admin-reset-link.txt`; staging/production can email it through
-  Brevo. The link expires after 60 minutes.
+  Brevo's HTTPS API. The link expires after 60 minutes. The public footer links to the CMS as
+  **Staff login**.
 - `/admin/forgot-password` prepares the same kind of link. After opening it, choose a new
   password of at least 10 characters. The link is consumed after one successful reset.
 - Local installs set `ADMIN_RESET_DELIVERY=file`. Set `ADMIN_RESET_DELIVERY=mail` and configure
-  `MAIL_MAILER=smtp` with Brevo's SMTP relay in staging/production. The service refuses to write
-  reset links to a `log` or `array` mailer.
+  `MAIL_MAILER=brevo` with a Brevo **API v3 key** (`BREVO_API_KEY`) in staging/production.
+  Railway blocks outbound SMTP on every port, so SMTP is only a local/self-hosted fallback. The
+  service refuses to write reset links to a `log` or `array` mailer.
 - Admin sessions use Sanctum bearer tokens and expire after eight hours by default
   (`SANCTUM_EXPIRATION=480`). Admins can edit/reorder/hide Home and About sections and items,
   manage Settings, and create/edit/soft-delete performances, testimonials, and Stories.
@@ -259,7 +261,9 @@ CI (`.github/workflows/ci.yml`) runs on every push and pull request:
 | `GMAIL_USER` | `server/.env` | Optional. Google account that sends the donation alerts |
 | `GMAIL_APP_PASSWORD` | `server/.env` | Optional. 16-character App Password for that account. Requires 2-Step Verification |
 | `DONATION_NOTIFY_TO` | `server/.env` | Optional. Where alerts are sent. Defaults to `GMAIL_USER` |
-| `SMTP_FALLBACK_HOST` | `server/.env` | Optional. A second free SMTP relay tried when Gmail fails. Setting this turns the fallback on |
+| `BREVO_API_KEY` | `server/.env` | Preferred in production. Brevo API v3 key (not the SMTP key). Railway blocks outbound SMTP, so this is the production alert path |
+| `BREVO_FROM` | `server/.env` | Verified Brevo sender for API alerts. Falls back to `SMTP_FALLBACK_FROM` or `MAIL_FROM_ADDRESS` |
+| `SMTP_FALLBACK_HOST` | `server/.env` | Optional local/self-hosted fallback. Do not set this on Railway; outbound SMTP is blocked |
 | `SMTP_FALLBACK_PORT` | `server/.env` | Optional. Relay port. Defaults to `587` |
 | `SMTP_FALLBACK_USER` / `SMTP_FALLBACK_PASSWORD` | `server/.env` | Optional. Relay credentials. Brevo's Login is a dedicated value like `9f3a2b1c@smtp-brevo.com`, not your account email; the password is the SMTP key |
 | `SMTP_FALLBACK_FROM` | `server/.env` | Optional. Verified sender for the relay. Defaults to `GMAIL_USER` |
@@ -277,9 +281,9 @@ The Laravel CMS also reads:
 | `SANCTUM_EXPIRATION` | `backend/.env` | Admin token lifetime in minutes. Defaults to `480` (8 hours) |
 | `ADMIN_EMAIL` | `backend/.env` | Administrator email. Defaults to `Communitymusicband@gmail.com` |
 | `ADMIN_NAME` | `backend/.env` | Display name for the administrator account |
-| `ADMIN_RESET_DELIVERY` | `backend/.env` | `file` for local/private-file delivery, `mail` to send reset links through Brevo SMTP |
+| `ADMIN_RESET_DELIVERY` | `backend/.env` | `file` for local/private-file delivery, `mail` to send reset links through the configured mailer |
 | `FORCE_HTTPS` | `backend/.env` | Set `true` when TLS terminates at a proxy and Laravel sees HTTP on the backend hop |
-| `MAIL_MAILER` / `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD` / `MAIL_FROM_ADDRESS` | `backend/.env` | Brevo SMTP settings, required when `ADMIN_RESET_DELIVERY=mail` |
+| `MAIL_MAILER` / `BREVO_API_KEY` / `MAIL_FROM_ADDRESS` | `backend/.env` | Use `MAIL_MAILER=brevo` with a Brevo API v3 key in staging/production. SMTP (`MAIL_HOST` etc.) is a local fallback only |
 
 `php artisan admin:setup-link` creates the account if it is missing, but it never prints a
 password. With `ADMIN_RESET_DELIVERY=file` it writes the setup link to
