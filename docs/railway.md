@@ -100,13 +100,16 @@ php artisan key:generate --show
 Copy the single output line into the Railway variable. Keep it stable; changing it invalidates
 signed reset links.
 
-Deploy from `backend/`. The `--path-as-root` flag keeps Railpack from treating the repository root
-(the Vite app) as the build context:
+Deploy from the repository root. The path argument and `--path-as-root` keep Railpack from treating
+the repository root (the Vite app) as the build context:
 
 ```bash
-cd backend
-railway up . --path-as-root --service api
+railway up backend --service api --path-as-root
 ```
+
+Running `railway up` from the repository root without `backend --path-as-root`, or from inside
+`backend/` without `--path-as-root`, can replace the API with the Vite site. The API then serves
+`index.html` and `/api/health` returns a 502 or HTML instead of JSON.
 
 Then generate a public domain under **Settings -> Networking**. Put that HTTPS URL in `APP_URL`.
 The health check is `GET <api-domain>/api/health`; it must return `{"status":"ok"}`.
@@ -226,9 +229,10 @@ container is the network policy, not a bad SMTP password.
 
    Each Railway service has its **own** outbound IP, and the address changes on
    redeploy. On 2026-11-18 the `api` service egressed from `162.220.234.81` while
-   `donations` egressed from `152.55.180.213`; a key that works from the API
-   still fails from the donation service until that second IP is authorized.
-   Check the current address from the service shell:
+   `donations` egressed from `152.55.180.213`. After the 2026-11-19 redeploy the
+   API egressed from `152.55.182.35`, and Brevo still returned 401 until the
+   unknown-IP block was disabled. Check the current address from the service
+   shell:
 
    ```bash
    curl -s https://api.ipify.org
@@ -238,11 +242,23 @@ container is the network policy, not a bad SMTP password.
    IP block, or enable Railway **Static Outbound IPs** on both services and
    allowlist the three fixed addresses.
 
-   The Laravel entrypoint runs `php artisan mail:verify` before Apache starts.
-   If Brevo returns 401 from the new container, the deployment stops and the
-   previous working deployment keeps serving password-reset email. The
-   donations service still queues alerts in `/app/data/pending-alerts.jsonl` and
-   retries, so a mail outage delays alerts instead of losing them.
+   The Laravel entrypoint runs `php artisan mail:verify` before Apache starts
+   and stops the container on a Brevo 401. This is a pre-flight check, not a
+   zero-downtime rollback: in the current CLI deploy setup Railway removes the
+   previous deployment when the new one is created, so a failed check can leave
+   the API unavailable. If that happens, restore service immediately with the
+   log transport, then fix Brevo:
+
+   ```bash
+   railway variables --service api --set MAIL_MAILER=log --skip-deploys
+   railway up backend --service api --path-as-root
+   ```
+
+   Public pages stay up, but password-reset and alert email are not delivered.
+   Restore `MAIL_MAILER=brevo` and redeploy only after Brevo accepts the current
+   egress IP. The donations service still queues alerts in
+   `/app/data/pending-alerts.jsonl` and retries, so a mail outage delays alerts
+   instead of losing them.
 4. Set `MAIL_FROM_ADDRESS` (Laravel) and `BREVO_FROM` (donation API) to the
    verified sender.
 5. Set `ADMIN_RESET_DELIVERY=mail` only after `BREVO_API_KEY` is saved, then

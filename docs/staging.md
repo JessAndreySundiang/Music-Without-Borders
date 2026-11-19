@@ -167,9 +167,11 @@ For a VPS or other PHP host:
   Automatic authorization is not durable: Brevo stops auto-authorizing new addresses after the
   first 30 days, and Railway changes each service's egress IP on redeploy. Without this, Brevo
   returns `401 ... unrecognised IP address` even with a valid key.
-- The Laravel entrypoint runs `php artisan mail:verify` and fails a deployment when Brevo rejects
-  the container's egress IP, so the previous working deployment keeps serving. Run the same
-  command manually after a Brevo or Railway network change.
+- The Laravel entrypoint runs `php artisan mail:verify` and stops the container when Brevo rejects
+  the egress IP. This is a pre-flight check, not a rollback: Railway may remove the previous
+  deployment before the new one is healthy. If the check fails, redeploy with `MAIL_MAILER=log` to
+  restore the API, then restore `MAIL_MAILER=brevo` after Brevo accepts the new address. Run the
+  same command manually after a Brevo or Railway network change.
 - Use `php artisan admin:setup-link` or the forgot-password screen to verify delivery.
 - Do not put API keys in `README.md`, CI logs, or screenshots.
 
