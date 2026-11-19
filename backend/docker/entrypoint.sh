@@ -22,6 +22,11 @@ chown -R www-data:www-data storage bootstrap/cache
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+
+# A new deployment gets a new outbound IP. Fail before Apache starts when
+# Brevo rejects that IP, so the previous working deployment keeps serving.
+php artisan mail:verify
+
 php artisan migrate --force
 
 # Set RUN_SEED=true for the first staging boot, then remove it. Re-running the

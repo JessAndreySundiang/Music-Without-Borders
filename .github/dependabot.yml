@@ -12,6 +12,11 @@ updates:
         update-types:
           - minor
           - patch
+    # TypeScript 7 is blocked by typescript-eslint's peer range (<6.1.0).
+    ignore:
+      - dependency-name: "typescript"
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: npm
     directory: "/server"
@@ -38,6 +43,11 @@ updates:
         update-types:
           - minor
           - patch
+    # PHPUnit 13 requires PHP >= 8.4.1; the API image and CI use PHP 8.3.
+    ignore:
+      - dependency-name: "phpunit/phpunit"
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: "/"

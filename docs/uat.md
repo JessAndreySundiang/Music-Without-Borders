@@ -134,9 +134,19 @@ Automated and API checks run on 2026-11-18 against the temporary staging URLs:
 | Backups | MySQL: 12 tables restored with identical row counts. Donation ledger: 4 entries restored, duplicate event ignored, file hash unchanged. See [`backups.md`](backups.md) |
 | Donations | Stripe test donation recorded; a live Brevo API send from the donation service succeeded (`transports=Brevo API,relay smtp-relay.brevo.com`, `sent=yes`) |
 
-Still manual before launch: sign in as the real editor and exercise CMS create/edit/publish/delete flows,
-request and use a real password-reset email, run a fresh Stripe test donation with a delivered alert,
-then repeat the checklist on the final domain.
+Automated and API checks run on 2026-11-19 against the same temporary staging URLs:
+
+| Area | Result |
+| --- | --- |
+| CMS CRUD | Stories 8/8: create `POST → 201`, public list/detail `200`, edit + unpublish `PUT → 200`, public detail `404`, delete `DELETE → 200`, row hidden in the CMS. Performances/testimonials/home reorder 9/9: create `201`, edit + unpublish, public exclusion/`404`, delete `200`, section order swapped and restored. Zero console/page errors. All UAT rows were force-deleted afterward. |
+| Donations | $10 Stripe test donation succeeded (`pi_3UdQR3BqunqJRzQo0vgq4Yei`); ledger grew 4 → 5 with a `$10 USD` `succeeded` entry; Brevo delivered `[TEST] Donation received — $10.00 USD`; `/health` reported `pendingAlerts=0`. |
+| Password reset | Brevo delivered the reset email to the temporary plus-address; the one-time token was consumed and the new password worked. The temp admin and its tokens were deleted; the only remaining admin is `communitymusicband@gmail.com`. The unused reset row for that address was deleted so no live link remains in the inbox. |
+| CI | CI on `cd74d14` is green. Dependency review now passes after enabling the repository dependency graph. PHPUnit 13 (requires PHP >= 8.4) and TypeScript 7 (blocked by `typescript-eslint < 6.1.0`) were closed; Dependabot ignore rules were added for those majors. |
+| Mail resilience | The Laravel entrypoint now runs `php artisan mail:verify`; tests cover success, IP rejection, Brevo outage, missing key, and non-Brevo transports. |
+
+Still manual before launch: turn off Brevo unknown-IP blocking for API keys (or use Railway static
+egress and allowlist the fixed addresses), repeat the checklist on the final domain, and make the
+live Stripe smoke donation/refund.
 
 ## Sign-off
 

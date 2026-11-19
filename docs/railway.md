@@ -237,6 +237,12 @@ container is the network policy, not a bad SMTP password.
    Allowlisting individual addresses is brittle. Prefer disabling the API-keys
    IP block, or enable Railway **Static Outbound IPs** on both services and
    allowlist the three fixed addresses.
+
+   The Laravel entrypoint runs `php artisan mail:verify` before Apache starts.
+   If Brevo returns 401 from the new container, the deployment stops and the
+   previous working deployment keeps serving password-reset email. The
+   donations service still queues alerts in `/app/data/pending-alerts.jsonl` and
+   retries, so a mail outage delays alerts instead of losing them.
 4. Set `MAIL_FROM_ADDRESS` (Laravel) and `BREVO_FROM` (donation API) to the
    verified sender.
 5. Set `ADMIN_RESET_DELIVERY=mail` only after `BREVO_API_KEY` is saved, then

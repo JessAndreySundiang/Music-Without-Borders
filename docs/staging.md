@@ -162,10 +162,14 @@ For a VPS or other PHP host:
   Railway blocks outbound SMTP on ports 25, 465, 587, and 2525, so the HTTPS API is the only path.
 - Verify the sender address under **Senders**, then set `MAIL_FROM_ADDRESS` (Laravel) and
   `BREVO_FROM` (donation API) to it. A mismatch can make Brevo reject the message.
-- If the account blocks unknown IPs, choose **Automatic authorization** or authorize the API host's
-  outbound IP under **Account -> Security -> Authorized IPs**. Without this, Brevo returns
-  `401 ... unrecognised IP address` even with a valid key. Automatic authorization is preferred on
-  Railway because egress IPs can change.
+- Turn off **Block unknown IP addresses** for API keys under **Account -> Security ->
+  Authorized IPs**, or enable Railway **Static Outbound IPs** and allowlist the fixed addresses.
+  Automatic authorization is not durable: Brevo stops auto-authorizing new addresses after the
+  first 30 days, and Railway changes each service's egress IP on redeploy. Without this, Brevo
+  returns `401 ... unrecognised IP address` even with a valid key.
+- The Laravel entrypoint runs `php artisan mail:verify` and fails a deployment when Brevo rejects
+  the container's egress IP, so the previous working deployment keeps serving. Run the same
+  command manually after a Brevo or Railway network change.
 - Use `php artisan admin:setup-link` or the forgot-password screen to verify delivery.
 - Do not put API keys in `README.md`, CI logs, or screenshots.
 
