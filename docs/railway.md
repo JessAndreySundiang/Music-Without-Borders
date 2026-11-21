@@ -190,18 +190,16 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 `VITE_API_BASE_URL` must include `/api`. `VITE_API_URL` is the donation API root, without a trailing
 slash. The Stripe publishable key is public by design; never put `sk_...` in Vercel.
 
-Deploy with the Vercel CLI (`npx vercel --prod`) or connect the repository under
-**Project -> Settings -> Git**. The CLI is useful when the Git integration is not attached:
+The project is linked to `JessAndreySundiang/Music-Without-Borders` with production branch `main`
+(verified 2026-11-21), so pushes to `main` deploy automatically. If a new project cannot connect,
+install the Vercel GitHub App for the repository owner, then run `npx vercel git connect --yes` or
+connect from **Project -> Settings -> Git**.
+
+If the integration is unavailable, deploy manually from the repository root:
 
 ```bash
 npx vercel --prod --yes
 ```
-
-`npx vercel git connect` fails with *Failed to connect ... make sure there aren't any typos*
-until the Vercel GitHub App is installed for the repository owner. Connect it once in the
-dashboard (**Project -> Settings -> Git -> Connect Git Repository**, which opens the GitHub App
-install flow), then pushes to `main` deploy automatically. Until then, every merge needs a manual
-`npx vercel@latest --prod --yes` from the repository root.
 
 Open the generated `*.vercel.app` URL, then go back to Railway:
 
