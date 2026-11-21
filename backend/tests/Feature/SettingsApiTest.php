@@ -27,7 +27,7 @@ class SettingsApiTest extends TestCase
         SiteSetting::query()->create([
             'group_name' => 'seo',
             'key' => 'seo.about.page_title',
-            'value' => 'About',
+            'value' => 'About Us',
         ]);
 
         $response = $this->getJson('/api/settings')->assertOk();
@@ -35,6 +35,6 @@ class SettingsApiTest extends TestCase
 
         $this->assertSame('Music Without Borders', $data['site.name']);
         $this->assertSame('0994-329-5457', $data['contact.phone_label']);
-        $this->assertSame('About', $data['seo.about.page_title']);
+        $this->assertSame('About Us', $data['seo.about.page_title']);
     }
 }

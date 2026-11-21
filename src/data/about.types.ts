@@ -41,16 +41,6 @@ export interface HeroData {
   ctas: HeroCta[];
 }
 
-export interface ProfileData {
-  name: string;
-  age: number;
-  role: string;
-  course: string;
-  school: string;
-  instrument: string;
-  bio: string;
-}
-
 export interface StoryData {
   eyebrow: string;
   title: string;
@@ -141,7 +131,6 @@ export interface MetaData {
 
 export interface AboutPageData {
   hero: HeroData;
-  profile: ProfileData;
   story: StoryData;
   timeline: TimelineItem[];
   values: ValuesData;

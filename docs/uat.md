@@ -21,7 +21,8 @@ npm run test:e2e
 ## Public site
 
 - [ ] Home loads with **Music Without Borders** in the header and footer, and CMS copy is visible.
-- [ ] Navigation works for Home, Performances, Instruments, About, Stories, and Donate.
+- [ ] Navigation works for Home, Performances, Instruments, About Us, Stories, and Donate.
+- [ ] About Us shows five team cards in hierarchy order with only name and role, and no age, school, address, or phone details.
 - [ ] `/schedule` loads the performances page.
 - [ ] `/blog` redirects to `/stories`.
 - [ ] Deep links to `/about`, `/stories`, and `/admin/login` work after a hard refresh.

@@ -1,15 +1,10 @@
 import { useId, useState, type ReactNode } from "react";
 import PageHero from "../PageHero";
 import SectionHeading from "../SectionHeading";
-import ProfileCard from "../ProfileCard";
+import TeamCard from "../TeamCard";
+import { teamMembers } from "../../data/team";
 import { resolveIcon } from "../../lib/iconMap";
-import {
-  extraString,
-  itemExtraNumber,
-  itemExtraString,
-  paragraphs,
-  sectionItems,
-} from "../../lib/section";
+import { extraString, paragraphs, sectionItems } from "../../lib/section";
 import { useSiteSettings } from "../../lib/siteSettingsContext";
 import type { AboutPageContent, PageSection } from "../../types/Cms";
 import SectionCta from "./SectionCta";
@@ -49,28 +44,49 @@ function HeroSection({ section }: SectionProps) {
   );
 }
 
-function ProfileSection({ section }: SectionProps) {
-  const profile = sectionItems(section, "profile")[0];
-  const { get } = useSiteSettings();
-
-  if (!profile) return null;
+function TeamSection({ section }: SectionProps) {
+  const desktopRemainder = teamMembers.length % 3;
+  const tabletRemainder = teamMembers.length % 2;
+  const lastIndex = teamMembers.length - 1;
+  const desktopLastRowStart =
+    desktopRemainder === 1 ? "lg:col-start-3" : desktopRemainder === 2 ? "lg:col-start-2" : "";
+  const desktopLastRowFirstIndex =
+    desktopRemainder === 0 ? -1 : teamMembers.length - desktopRemainder;
 
   return (
-    <section className="band bg-paper">
+    <section id="team" className="band scroll-mt-24 bg-paper">
       <div className="mx-auto w-full max-w-6xl px-5 py-20 md:py-24">
-        <ProfileCard
-          name={profile.title ?? ""}
-          age={itemExtraNumber(profile, "age")}
-          role={itemExtraString(profile, "role")}
-          course={itemExtraString(profile, "course")}
-          school={itemExtraString(profile, "school")}
-          address={itemExtraString(profile, "address", get("contact.address"))}
-          phone={get("contact.phone_label")}
-          phoneHref={get("contact.phone_href")}
-          instrument={itemExtraString(profile, "instrument")}
-          bio={profile.body ?? undefined}
-          imageUrl={profile.image_url}
+        <SectionHeading
+          center
+          eyebrow={section.eyebrow ?? "Our team"}
+          title={section.title ?? "Meet the people behind the music"}
+          text={
+            section.body ??
+            "The people who keep our rehearsals, music library, and performances running."
+          }
         />
+
+        <ul className="mt-12 grid gap-5 sm:grid-cols-2 md:mt-14 lg:grid-cols-6">
+          {teamMembers.map((member, index) => {
+            const startsDesktopLastRow = index === desktopLastRowFirstIndex;
+            const isTabletLastOddCard = tabletRemainder === 1 && index === lastIndex;
+            const placement = [
+              "lg:col-span-2",
+              startsDesktopLastRow ? desktopLastRowStart : "",
+              isTabletLastOddCard
+                ? "sm:col-span-2 sm:mx-auto sm:w-[calc(50%-0.625rem)] lg:mx-0 lg:w-auto"
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
+            return (
+              <li key={member.id} className={placement}>
+                <TeamCard member={member} />
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </section>
   );
@@ -313,7 +329,8 @@ function JoinSection({ section }: SectionProps) {
 
 const aboutRegistry: Record<string, (props: SectionProps) => ReactNode> = {
   page_hero: HeroSection,
-  profile: ProfileSection,
+  profile: TeamSection,
+  team: TeamSection,
   mission: MissionSection,
   story_timeline: StoryTimelineSection,
   values: ValuesSection,

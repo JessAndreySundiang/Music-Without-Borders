@@ -13,12 +13,6 @@ describe("About Data & Schema", () => {
     expect(data.hero.ctas.length).toBeGreaterThan(0);
   });
 
-  it("has valid profile data", () => {
-    expect(data.profile.name).toBe("Jess Andrey Sundiang");
-    expect(data.profile.age).toBe(20);
-    expect(data.profile.instrument).toBeTruthy();
-  });
-
   it("has valid mission with resolved icons", () => {
     expect(data.mission.statement).toBeTruthy();
     expect(data.mission.pillars.length).toBe(3);

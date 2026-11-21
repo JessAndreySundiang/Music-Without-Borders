@@ -22,7 +22,7 @@ test.describe("public site", () => {
     await page.goto("/");
 
     const nav = page.getByRole("navigation", { name: "Primary" });
-    await nav.getByRole("link", { name: "About" }).click();
+    await nav.getByRole("link", { name: "About Us" }).click();
     await expect(page).toHaveURL(/\/about$/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
       "Music should be within everyone's reach",
@@ -140,7 +140,7 @@ test.describe("public site", () => {
       await page.goto("/");
 
       await page.getByRole("button", { name: "Open navigation" }).click();
-      await page.locator("#primary-navigation").getByRole("link", { name: "About" }).click();
+      await page.locator("#primary-navigation").getByRole("link", { name: "About Us" }).click();
 
       await expect(page).toHaveURL(/\/about$/);
       await expect(page.getByRole("heading", { level: 1 })).toContainText(

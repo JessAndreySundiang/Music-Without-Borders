@@ -45,20 +45,9 @@ class AboutPageSeeder extends Seeder
             [
                 'key' => 'profile',
                 'component' => 'profile',
-                'items' => [
-                    [
-                        'item_type' => 'profile',
-                        'title' => 'Jess Andrey Sundiang',
-                        'body' => 'A passionate musician and aspiring IT professional dedicated to making music education accessible in Pampanga. Founded this platform to connect the community through the universal language of music.',
-                        'extra' => [
-                            'age' => 20,
-                            'role' => 'Flute and piccolo player · Community band volunteer',
-                            'course' => '3rd Year BSIT',
-                            'school' => 'Angeles University Foundation',
-                            'instrument' => 'Flute / Piccolo',
-                        ],
-                    ],
-                ],
+                'eyebrow' => 'Our team',
+                'title' => 'Meet the people behind the music',
+                'body' => 'The people who keep our rehearsals, music library, and performances running.',
             ],
             [
                 'key' => 'mission',

@@ -170,7 +170,7 @@ with the band's real dates before the site is promoted.
    - Loading, empty, and retry states keep the page usable if the API is unavailable.
 4. **Dynamic About Page (`/about` / `About.tsx`):**
    - Renders `about_us_sections` and their items through a typed section registry.
-   - Profile, mission, timeline, values, impact, FAQ, and join content are fully CMS-driven.
+   - The **About Us** team roster is a static, typed list (`src/data/team.ts`); mission, timeline, values, impact, FAQ, and join content remain CMS-driven.
    - Contact and rehearsal details come from `GET /api/settings`.
 5. **Instrument Gallery (`/instruments` / `Instruments.tsx`):**
    - Organises all 17 local instrument photographs into woodwinds, brass, strings, and percussion.

@@ -19,16 +19,6 @@
     ]
   },
 
-  "profile": {
-    "name": "Jess Andrey Sundiang",
-    "age": 20,
-    "role": "Flute and piccolo player · Community band volunteer",
-    "course": "3rd Year BSIT",
-    "school": "Angeles University Foundation",
-    "instrument": "Flute / Piccolo",
-    "bio": "A passionate musician and aspiring IT professional dedicated to making music education accessible in Pampanga. Founded this platform to connect the community through the universal language of music."
-  },
-
   "story": {
     "eyebrow": "Our story",
     "title": "About the band",
@@ -204,8 +194,8 @@
   },
 
   "meta": {
-    "pageTitle": "About",
-    "ogTitle": "About — Music Without Borders",
+    "pageTitle": "About Us",
+    "ogTitle": "About Us - Music Without Borders",
     "ogDescription": "Learn about our mission to make music accessible to everyone in Pampanga. Free lessons, free instruments, free concerts.",
     "lastUpdated": "2026-11-03"
   }

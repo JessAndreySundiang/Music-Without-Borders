@@ -7,7 +7,7 @@ import { usePageMeta } from "../lib/usePageTitle";
 function About() {
   usePageMeta({
     page: "about",
-    fallbackTitle: "About",
+    fallbackTitle: "About Us",
     fallbackDescription:
       "Learn about our mission to make music accessible to everyone in Pampanga. Free lessons, free instruments, free concerts.",
   });

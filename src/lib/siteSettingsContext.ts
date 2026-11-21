@@ -24,8 +24,8 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   "seo.home.og_title": "Music that belongs to everyone",
   "seo.home.og_description":
     "Free to learn, free to listen, free to join. A volunteer band making room for more music in our community.",
-  "seo.about.page_title": "About",
-  "seo.about.og_title": "About — Music Without Borders",
+  "seo.about.page_title": "About Us",
+  "seo.about.og_title": "About Us - Music Without Borders",
   "seo.about.og_description":
     "Learn about our mission to make music accessible to everyone in Pampanga. Free lessons, free instruments, free concerts.",
   "seo.instruments.page_title": "Instruments",

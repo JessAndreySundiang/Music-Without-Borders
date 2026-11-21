@@ -22,7 +22,7 @@ export const navItems: NavItem[] = [
   { label: "Home", to: "/", end: true },
   { label: "Performances", to: "/performances" },
   { label: "Instruments", to: "/instruments" },
-  { label: "About", to: "/about" },
+  { label: "About Us", to: "/about" },
   { label: "Stories", to: "/stories" },
   { label: "Donate", to: "/donate" },
 ];
