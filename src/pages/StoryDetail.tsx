@@ -56,11 +56,6 @@ function StoryArticle({ story }: { story: Story }) {
                 Featured story
               </span>
             )}
-            {story.is_sample && (
-              <span className="rounded-full border border-brass/35 bg-brass/10 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-brass">
-                Sample story
-              </span>
-            )}
           </div>
 
           <h1 className="mt-5 max-w-3xl font-serif text-4xl font-semibold leading-[1.08] tracking-tight text-balance text-stage-fg md:text-6xl">

@@ -7,10 +7,11 @@ type SampleNoticeProps = {
   className?: string;
 };
 
-/** Clearly labels demo/sample performance records without hiding the content. */
+/** Renders an optional public notice/announcement for performances when configured in the CMS. */
 function SampleNotice({ message, className = "" }: SampleNoticeProps) {
   const { get } = useSiteSettings();
-  const text = message || get("performances.sample_notice");
+  const rawText = message ?? get("performances.sample_notice") ?? "";
+  const text = rawText.trim();
 
   if (!text) return null;
 

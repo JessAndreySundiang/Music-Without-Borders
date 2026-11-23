@@ -50,11 +50,6 @@ function StoryCard({ story, index }: { story: Story; index: number }) {
           <span className="rounded-full border border-line bg-paper/95 px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider text-muted shadow-sm">
             {getCategoryLabel(story.category)}
           </span>
-          {story.is_sample && (
-            <span className="rounded-full border border-brass/40 bg-paper/95 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-brass shadow-sm">
-              Sample story
-            </span>
-          )}
         </div>
       </div>
 
@@ -120,11 +115,6 @@ function FeaturedStoryCard({ story }: { story: Story }) {
           <span className="rounded-full border border-line bg-paper/95 px-3 py-1 text-xs font-bold uppercase tracking-wider text-muted shadow-sm">
             {getCategoryLabel(story.category)}
           </span>
-          {story.is_sample && (
-            <span className="rounded-full border border-brass/40 bg-paper/95 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-brass shadow-sm">
-              Sample story
-            </span>
-          )}
         </div>
       </div>
 

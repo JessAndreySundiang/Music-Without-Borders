@@ -40,7 +40,7 @@ class SiteSettingSeeder extends Seeder
             ['seo', 'seo.stories.page_title', 'Notes from the Bandstand'],
             ['seo', 'seo.stories.og_title', 'Notes from the Bandstand'],
             ['seo', 'seo.stories.og_description', 'Progress reports and stories from the people the band has helped.'],
-            ['performances', 'performances.sample_notice', 'Sample schedule for the CMS demo. Replace these dates and details with the band\'s real 2026 events.'],
+            ['performances', 'performances.sample_notice', ''],
         ];
 
         foreach ($settings as [$group, $key, $value]) {

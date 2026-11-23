@@ -43,8 +43,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   "seo.stories.page_title": "Notes from the Bandstand",
   "seo.stories.og_title": "Notes from the Bandstand",
   "seo.stories.og_description": "Progress reports and stories from the people the band has helped.",
-  "performances.sample_notice":
-    "Sample schedule for the CMS demo. Replace these dates and details with the band's real 2026 events.",
+  "performances.sample_notice": "",
 };
 
 export type SiteSettingsValue = {

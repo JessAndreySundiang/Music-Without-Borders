@@ -120,7 +120,7 @@ class HomePageSeeder extends Seeder
                 'title' => '2026 Concerts & Performances',
                 'body' => 'Every event is free and open to the neighbourhood — no tickets and no sign-up, just come along.',
                 'extra' => [
-                    'notice' => "Sample schedule for the CMS demo. Replace these dates and details with the band's real 2026 events.",
+                    'notice' => '',
                 ],
                 'items' => [
                     [
