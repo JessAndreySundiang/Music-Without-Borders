@@ -1,10 +1,16 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const baseURL = process.env.E2E_BASE_URL ?? "http://127.0.0.1:5173";
 const apiURL = process.env.E2E_API_URL ?? "http://127.0.0.1:8000";
+const e2eDbPath = process.env.DB_DATABASE ?? path.resolve(__dirname, "backend/database/e2e.sqlite");
 
 export default defineConfig({
   testDir: "./e2e",
+  globalSetup: "./e2e/global-setup.ts",
+  globalTeardown: "./e2e/global-teardown.ts",
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
@@ -32,6 +38,11 @@ export default defineConfig({
       url: `${apiURL}/api/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
+      env: {
+        DB_CONNECTION: process.env.DB_CONNECTION ?? "sqlite",
+        DB_DATABASE: e2eDbPath,
+        APP_ENV: process.env.APP_ENV ?? "testing",
+      },
     },
     {
       // Test the production bundle rather than compiling lazy chunks in the

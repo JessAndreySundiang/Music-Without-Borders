@@ -123,4 +123,6 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    'story_admin_email' => env('STORY_ADMIN_EMAIL', 'Communitymusicband@gmail.com'),
+
 ];

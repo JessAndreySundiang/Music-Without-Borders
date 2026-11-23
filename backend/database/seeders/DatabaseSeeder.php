@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             TestimonialSeeder::class,
             PerformanceSeeder::class,
             StorySeeder::class,
+            StorySubmissionSeeder::class,
         ]);
     }
 }

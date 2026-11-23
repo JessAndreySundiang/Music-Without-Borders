@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
 import {
@@ -14,17 +22,23 @@ import {
   IconUsers,
 } from "../components/Icons";
 import {
+  AdminApiError,
+  approveAdminStory,
   createAdminPerformance,
   createAdminStory,
   createAdminTestimonial,
   deleteAdminPerformance,
   deleteAdminStory,
   deleteAdminTestimonial,
+  featureAdminStory,
   fetchAdminPage,
   fetchAdminPerformances,
   fetchAdminSettings,
   fetchAdminStories,
   fetchAdminTestimonials,
+  rejectAdminStory,
+  reopenAdminStory,
+  unfeatureAdminStory,
   reorderAdminItems,
   reorderAdminSections,
   updateAdminItem,
@@ -35,7 +49,18 @@ import {
   updateAdminTestimonial,
 } from "../lib/adminApi";
 import { useAdminAuth } from "../lib/adminAuthContext";
+import { paragraphs } from "../lib/section";
+import {
+  REJECTION_REASONS,
+  STORY_STATUS_LABELS,
+  canApproveStory,
+  canRejectStory,
+  canReopenStory,
+  rejectionSummary,
+} from "../lib/storyModeration";
+import { STORY_CATEGORIES, getCategoryLabel } from "../lib/storySubmission";
 import { usePageTitle } from "../lib/usePageTitle";
+import type { StoryCategory } from "../types/Story";
 import type {
   AdminPageContent,
   AdminPerformance,
@@ -46,6 +71,9 @@ import type {
   PerformanceDraft,
   SectionUpdate,
   StoryDraft,
+  StoryStatus,
+  StoryStatusCounts,
+  StoryStatusFilter,
   TestimonialDraft,
 } from "../types/Admin";
 import type { PageSection, SectionItem } from "../types/Cms";
@@ -61,8 +89,12 @@ const secondaryButton =
   "inline-flex items-center justify-center gap-2 rounded-full border border-line bg-paper px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-brass/40 hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-bright";
 const smallButton =
   "inline-flex items-center justify-center gap-1.5 rounded-lg border border-line bg-paper px-2.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:border-brass/40 hover:text-brass disabled:cursor-not-allowed disabled:opacity-40";
+const smallPrimaryButton =
+  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-brass/40 bg-brass-bright px-2.5 py-1.5 text-xs font-bold text-night-950 transition-colors hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-40";
 const dangerButton =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-plume/30 bg-plume/10 px-2.5 py-1.5 text-xs font-semibold text-plume transition-colors hover:bg-plume/15";
+  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-plume/30 bg-plume/10 px-2.5 py-1.5 text-xs font-semibold text-plume transition-colors hover:bg-plume/15 disabled:cursor-not-allowed disabled:opacity-40";
+const dangerPrimaryButton =
+  "inline-flex items-center justify-center gap-2 rounded-full bg-plume px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-plume/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-plume disabled:cursor-not-allowed disabled:opacity-60";
 
 type Tab = "overview" | "home" | "about" | "performances" | "testimonials" | "stories" | "settings";
 
@@ -743,7 +775,7 @@ function PageEditor({ page }: { page: PageKey }) {
   );
 }
 
-type FieldType = "text" | "textarea" | "date" | "time" | "number" | "checkbox";
+type FieldType = "text" | "textarea" | "date" | "time" | "number" | "checkbox" | "select";
 type Field = {
   name: string;
   label: string;
@@ -752,6 +784,7 @@ type Field = {
   placeholder?: string;
   help?: string;
   rows?: number;
+  options?: ReadonlyArray<{ value: string; label: string }>;
 };
 type Draft = Record<string, string | number | boolean>;
 
@@ -822,6 +855,20 @@ function RecordForm({
                       required={field.required}
                       placeholder={field.placeholder}
                     />
+                  ) : field.type === "select" ? (
+                    <select
+                      id={`field-${field.name}`}
+                      value={String(draft[field.name] ?? "")}
+                      onChange={(event) => onChange(field.name, event.target.value)}
+                      className={inputClass}
+                      required={field.required}
+                    >
+                      {field.options?.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
                   ) : (
                     <input
                       id={`field-${field.name}`}
@@ -1192,69 +1239,918 @@ function TestimonialsAdmin() {
   );
 }
 
-function StoriesAdmin() {
-  const fields: Field[] = [
-    { name: "title", label: "Title", required: true },
-    {
-      name: "slug",
-      label: "Slug",
-      help: "Leave blank to generate from the title. Use lowercase words separated by hyphens.",
-    },
-    { name: "excerpt", label: "Excerpt", type: "textarea", rows: 3 },
-    { name: "body", label: "Story body", type: "textarea", required: true, rows: 12 },
-    { name: "author_name", label: "Author name", placeholder: "Music Without Borders" },
-    { name: "author_role", label: "Author role", placeholder: "Notes from the Bandstand" },
-    {
-      name: "cover_image_path",
-      label: "Cover image path",
-      help: "Relative to storage/app/public.",
-    },
-    { name: "sort_order", label: "Sort order", type: "number" },
-    { name: "is_published", label: "Published", type: "checkbox" },
-    { name: "is_sample", label: "Sample story (shown with a label)", type: "checkbox" },
-  ];
+const storyStatusClasses: Record<StoryStatus, string> = {
+  draft: "border-line bg-paper-2 text-muted",
+  pending: "border-brass/40 bg-brass/15 text-brass",
+  approved: "border-emerald-600/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  rejected: "border-plume/30 bg-plume/10 text-plume",
+};
+
+const emptyStoryCounts: StoryStatusCounts = {
+  all: 0,
+  draft: 0,
+  pending: 0,
+  approved: 0,
+  rejected: 0,
+};
+
+const emptyStoryDraft: Draft = {
+  title: "",
+  slug: "",
+  category: "community",
+  excerpt: "",
+  body: "",
+  author_name: "Music Without Borders",
+  author_role: "Notes from the Bandstand",
+  cover_image_path: "",
+  cover_image_url: "",
+  sort_order: 0,
+  is_sample: false,
+};
+
+const storyEditorFields: Field[] = [
+  { name: "title", label: "Title", required: true },
+  {
+    name: "category",
+    label: "Category",
+    type: "select",
+    options: STORY_CATEGORIES,
+  },
+  {
+    name: "slug",
+    label: "Slug",
+    help: "Leave blank to generate from the title. Use lowercase words separated by hyphens.",
+  },
+  { name: "excerpt", label: "Excerpt", type: "textarea", rows: 3 },
+  { name: "body", label: "Story body", type: "textarea", required: true, rows: 12 },
+  { name: "author_name", label: "Author name", placeholder: "Music Without Borders" },
+  { name: "author_role", label: "Author role", placeholder: "Notes from the Bandstand" },
+  {
+    name: "cover_image_path",
+    label: "Cover image path",
+    help: "Relative to storage/app/public.",
+  },
+  {
+    name: "cover_image_url",
+    label: "Cover image URL",
+    help: "Optional external https:// image URL.",
+  },
+  { name: "sort_order", label: "Sort order", type: "number" },
+  { name: "is_sample", label: "Sample story (shown with a label)", type: "checkbox" },
+];
+
+const rejectionReasons = REJECTION_REASONS;
+
+function StoryStatusBadge({ status }: { status: StoryStatus }) {
+  return (
+    <span
+      className={`inline-flex rounded-full border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider ${storyStatusClasses[status]}`}
+    >
+      {STORY_STATUS_LABELS[status]}
+    </span>
+  );
+}
+
+function submittedAt(value: string | null): string {
+  if (!value) return "Unknown date";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat("en-PH", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function StoryPreviewDialog({ story, onClose }: { story: AdminStory; onClose: () => void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) dialog.showModal();
+  }, []);
 
   return (
-    <RecordManager<AdminStory>
-      title="Stories"
-      singular="story"
-      description="Notes from the Bandstand. Drafts stay off the public site until you publish them."
-      fields={fields}
-      emptyDraft={{
-        title: "",
-        slug: "",
-        excerpt: "",
-        body: "",
-        author_name: "Music Without Borders",
-        author_role: "Notes from the Bandstand",
-        cover_image_path: "",
-        sort_order: 0,
-        is_published: false,
-        is_sample: false,
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="story-preview-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
       }}
-      fetchRecords={fetchAdminStories}
-      createRecord={(draft) => createAdminStory(draft as unknown as StoryDraft)}
-      updateRecord={(id, draft) => updateAdminStory(id, draft as unknown as StoryDraft)}
-      deleteRecord={deleteAdminStory}
-      recordTitle={(record) => record.title}
-      recordMeta={(record) => (
-        <>
-          <span>{record.published_at ?? "Not published"}</span>
-          <span>{record.author_name || "Music Without Borders"}</span>
-          {record.is_sample && <span className="font-semibold text-brass">Sample content</span>}
-        </>
-      )}
-      recordStatus={(record) => (
-        <span
-          className={`rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider ${
-            record.is_published ? "bg-brass/15 text-brass" : "bg-paper-2 text-muted"
-          }`}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      className="m-auto max-h-[90vh] w-[min(92vw,48rem)] overflow-y-auto rounded-3xl border border-line bg-surface p-0 text-body shadow-2xl backdrop:bg-night-950/70"
+    >
+      <div className="p-6 sm:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-brass">
+              Submission preview
+            </p>
+            <h2
+              id="story-preview-title"
+              className="mt-2 font-serif text-2xl font-semibold tracking-tight text-ink"
+            >
+              {story.title}
+            </h2>
+          </div>
+          <button type="button" className={smallButton} onClick={onClose} autoFocus>
+            Close
+          </button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <StoryStatusBadge status={story.status} />
+          {story.is_featured && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-brass-bright/40 bg-amber-400/20 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-amber-500 dark:text-amber-300">
+              <IconSparkle className="size-2.5" />
+              Featured story
+            </span>
+          )}
+          {story.is_sample && (
+            <span className="rounded-full border border-line bg-paper px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-muted">
+              Sample data
+            </span>
+          )}
+        </div>
+
+        <dl className="mt-6 grid gap-4 rounded-2xl border border-line bg-paper p-4 text-sm sm:grid-cols-2">
+          <div>
+            <dt className={labelClass}>Author</dt>
+            <dd className="font-semibold text-ink">{story.author_name || "Not provided"}</dd>
+          </div>
+          <div>
+            <dt className={labelClass}>Email (private)</dt>
+            <dd className="break-words font-semibold text-ink">
+              {story.author_email || "No email on file"}
+            </dd>
+          </div>
+          <div>
+            <dt className={labelClass}>Role</dt>
+            <dd className="text-body">{story.author_role || "Not provided"}</dd>
+          </div>
+          <div>
+            <dt className={labelClass}>Submitted</dt>
+            <dd className="text-body">{submittedAt(story.created_at)}</dd>
+          </div>
+          <div>
+            <dt className={labelClass}>Consent</dt>
+            <dd className="text-body">
+              {story.consent_at ? `Recorded ${submittedAt(story.consent_at)}` : "Not recorded"}
+            </dd>
+          </div>
+          <div>
+            <dt className={labelClass}>Reviewer</dt>
+            <dd className="text-body">
+              {story.reviewer_name || "Not reviewed"}
+              {story.reviewed_at ? ` · ${submittedAt(story.reviewed_at)}` : ""}
+            </dd>
+          </div>
+          <div>
+            <dt className={labelClass}>Reference code</dt>
+            <dd className="font-mono font-semibold text-brass">{story.reference_code || "None"}</dd>
+          </div>
+          <div>
+            <dt className={labelClass}>Category</dt>
+            <dd className="text-body">{getCategoryLabel(story.category)}</dd>
+          </div>
+        </dl>
+
+        {story.cover_image_url && (
+          <div className="mt-6 overflow-hidden rounded-2xl border border-line bg-paper">
+            <img src={story.cover_image_url} alt="" className="max-h-72 w-full object-cover" />
+          </div>
+        )}
+
+        {story.excerpt && (
+          <p className="mt-6 border-l-2 border-brass/40 pl-4 text-base italic leading-relaxed text-muted">
+            {story.excerpt}
+          </p>
+        )}
+
+        <div className="mt-6 space-y-4 text-base leading-[1.8] text-body">
+          {paragraphs(story.body).map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
+        </div>
+
+        {story.rejection_reason && (
+          <div className="mt-6 rounded-xl border border-plume/30 bg-plume/10 p-4 text-sm text-plume">
+            <p className="font-bold">
+              {story.status === "rejected" ? "Rejection reason" : "Previous rejection reason"}
+            </p>
+            <p className="mt-1">{story.rejection_reason}</p>
+          </div>
+        )}
+
+        {story.events && story.events.length > 0 && (
+          <div className="mt-6 rounded-2xl border border-line bg-paper p-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted">
+              Moderation audit trail
+            </h3>
+            <ol className="mt-3 divide-y divide-line text-sm">
+              {story.events.map((event) => {
+                const actionBadgeClass =
+                  event.action === "approved"
+                    ? "border-brass/30 bg-brass/10 text-brass"
+                    : event.action === "rejected"
+                      ? "border-plume/30 bg-plume/10 text-plume"
+                      : event.action === "reopened"
+                        ? "border-sky-500/30 bg-sky-500/10 text-sky-400"
+                        : "border-line bg-surface text-muted";
+                return (
+                  <li key={event.id} className="py-2.5 first:pt-0 last:pb-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider ${actionBadgeClass}`}
+                        >
+                          {event.action}
+                        </span>
+                        <span className="font-semibold text-ink">
+                          {event.actor_name ||
+                            (event.action === "submitted"
+                              ? "Visitor (public submission)"
+                              : "System / Administrator")}
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted">{submittedAt(event.created_at)}</span>
+                    </div>
+                    {event.reason && (
+                      <p className="mt-1 border-l-2 border-plume/40 pl-2 text-xs text-plume">
+                        Reason: {event.reason}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
+
+        <div className="mt-7 flex justify-end border-t border-line pt-5">
+          <button type="button" className={secondaryButton} onClick={onClose}>
+            Close preview
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
+function RejectStoryDialog({
+  story,
+  onClose,
+  onRejected,
+}: {
+  story: AdminStory;
+  onClose: () => void;
+  onRejected: (reason: string) => Promise<void>;
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [reason, setReason] = useState("");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) dialog.showModal();
+  }, []);
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (busy) return;
+
+    if (!reason) {
+      setError("Choose a reason for rejecting this story.");
+      document.getElementById("reject-reason")?.focus();
+      return;
+    }
+
+    if (reason === "Other" && !note.trim()) {
+      setError("Add a short note explaining the reason.");
+      document.getElementById("reject-note")?.focus();
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+
+    try {
+      await onRejected(rejectionSummary(reason, note));
+      onClose();
+    } catch (cause) {
+      if (cause instanceof AdminApiError) {
+        setError(cause.errors.rejection_reason?.[0] ?? cause.message);
+      } else {
+        setError(cause instanceof Error ? cause.message : "Unable to reject this story.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="reject-story-title"
+      onCancel={(event) => {
+        if (busy) {
+          event.preventDefault();
+          return;
+        }
+        onClose();
+      }}
+      onClick={(event) => {
+        if (!busy && event.target === event.currentTarget) onClose();
+      }}
+      className="m-auto w-[min(92vw,34rem)] rounded-3xl border border-line bg-surface p-0 text-body shadow-2xl backdrop:bg-night-950/70"
+    >
+      <form onSubmit={submit} noValidate className="p-6 sm:p-7">
+        <h2
+          id="reject-story-title"
+          className="font-serif text-2xl font-semibold tracking-tight text-ink"
         >
-          {record.is_published ? "Published" : "Draft"}
-        </span>
+          Reject “{story.title}”
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          The story stays private. The reason is stored for the admin record and is never shown
+          publicly.
+        </p>
+
+        {error && (
+          <div
+            id="reject-reason-error"
+            role="alert"
+            className="mt-4 rounded-xl border border-plume/30 bg-plume/10 px-4 py-3 text-sm text-plume"
+          >
+            {error}
+          </div>
+        )}
+
+        <div className="mt-5">
+          <label htmlFor="reject-reason" className={labelClass}>
+            Reason <span className="text-plume">*</span>
+          </label>
+          <select
+            id="reject-reason"
+            value={reason}
+            onChange={(event) => {
+              setReason(event.target.value);
+              setError(null);
+            }}
+            className={inputClass}
+            autoFocus
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "reject-reason-error" : undefined}
+          >
+            <option value="">Choose a reason…</option>
+            {rejectionReasons.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mt-4">
+          <label htmlFor="reject-note" className={labelClass}>
+            Optional note
+          </label>
+          <textarea
+            id="reject-note"
+            value={note}
+            onChange={(event) => {
+              setNote(event.target.value);
+              setError(null);
+            }}
+            className={textareaClass}
+            rows={3}
+            placeholder="Add context for the record. This is not shown publicly."
+            aria-describedby={error ? "reject-reason-error" : undefined}
+          />
+        </div>
+
+        <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-line pt-5">
+          <button type="button" className={secondaryButton} onClick={onClose} disabled={busy}>
+            Cancel
+          </button>
+          <button type="submit" className={dangerPrimaryButton} disabled={busy}>
+            {busy ? "Rejecting…" : "Reject story"}
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
+function StoriesAdmin() {
+  const [stories, setStories] = useState<AdminStory[]>([]);
+  const [counts, setCounts] = useState<StoryStatusCounts>(emptyStoryCounts);
+  const [filter, setFilter] = useState<StoryStatusFilter>("pending");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [previewStory, setPreviewStory] = useState<AdminStory | null>(null);
+  const [rejectStory, setRejectStory] = useState<AdminStory | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+  const noticeRef = useRef<HTMLDivElement>(null);
+
+  const reload = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setReloadToken((token) => token + 1);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchAdminStories(filter)
+      .then((result) => {
+        if (cancelled) return;
+        setStories(result.stories);
+        setCounts(result.counts);
+        setError(null);
+      })
+      .catch((reason: unknown) => {
+        if (cancelled) return;
+        setError(reason instanceof Error ? reason.message : "Unable to load stories.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filter, reloadToken]);
+
+  useEffect(() => {
+    if (notice) noticeRef.current?.focus();
+  }, [notice]);
+
+  const changeFilter = (next: StoryStatusFilter) => {
+    setFilter(next);
+    setLoading(true);
+    setNotice(null);
+    setError(null);
+  };
+
+  const runStoryAction = async (
+    story: AdminStory,
+    action: () => Promise<unknown>,
+    message: string,
+  ) => {
+    setBusyId(story.id);
+    setError(null);
+    setNotice(null);
+
+    try {
+      await action();
+      setNotice(message);
+      reload();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to update this story.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const approve = (story: AdminStory) => {
+    if (!window.confirm(`Approve “${story.title}” and publish it now?`)) return;
+    void runStoryAction(
+      story,
+      () => approveAdminStory(story.id),
+      `Approved “${story.title}”. It is now public.`,
+    );
+  };
+
+  const reopen = (story: AdminStory) => {
+    if (!window.confirm(`Reopen “${story.title}” and return it to the pending queue?`)) return;
+    void runStoryAction(
+      story,
+      () => reopenAdminStory(story.id),
+      `Reopened “${story.title}”. It is back in the pending queue.`,
+    );
+  };
+
+  const feature = (story: AdminStory) => {
+    void runStoryAction(
+      story,
+      () => featureAdminStory(story.id),
+      `Featured “${story.title}”. It is now highlighted on the Stories page.`,
+    );
+  };
+
+  const unfeature = (story: AdminStory) => {
+    void runStoryAction(story, () => unfeatureAdminStory(story.id), `Unfeatured “${story.title}”.`);
+  };
+
+  const remove = (story: AdminStory) => {
+    if (!window.confirm(`Move “${story.title}” to the recycle bin?`)) return;
+    void runStoryAction(
+      story,
+      () => deleteAdminStory(story.id),
+      `Moved “${story.title}” to the recycle bin.`,
+    );
+  };
+
+  const reject = async (story: AdminStory, reason: string) => {
+    await rejectAdminStory(story.id, reason);
+    setNotice(`Rejected “${story.title}”. The story stays private.`);
+    reload();
+  };
+
+  const openNew = () => {
+    setEditingId(null);
+    setDraft({ ...emptyStoryDraft });
+    setEditorOpen(true);
+    setFormError(null);
+    setNotice(null);
+    window.requestAnimationFrame(() => document.getElementById("field-title")?.focus());
+  };
+
+  const startEdit = (story: AdminStory) => {
+    setEditingId(story.id);
+    setDraft({
+      title: story.title,
+      slug: story.slug,
+      category: story.category ?? "community",
+      excerpt: story.excerpt ?? "",
+      body: story.body,
+      author_name: story.author_name ?? "",
+      author_role: story.author_role ?? "",
+      cover_image_path: story.cover_image_path ?? "",
+      cover_image_url: story.cover_image_url ?? "",
+      sort_order: story.sort_order,
+      is_sample: story.is_sample,
+    });
+    setEditorOpen(true);
+    setFormError(null);
+    setNotice(null);
+    window.requestAnimationFrame(() => document.getElementById("field-title")?.focus());
+  };
+
+  const cancelEditor = () => {
+    setEditorOpen(false);
+    setEditingId(null);
+    setDraft(null);
+    setFormError(null);
+  };
+
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!draft || saving) return;
+
+    setSaving(true);
+    setFormError(null);
+
+    const payload: StoryDraft = {
+      title: String(draft.title ?? "").trim(),
+      slug: String(draft.slug ?? "").trim(),
+      category: (draft.category as StoryCategory) ?? "community",
+      excerpt: String(draft.excerpt ?? "").trim() || null,
+      body: String(draft.body ?? ""),
+      author_name: String(draft.author_name ?? "").trim() || null,
+      author_role: String(draft.author_role ?? "").trim() || null,
+      cover_image_path: String(draft.cover_image_path ?? "").trim() || null,
+      cover_image_url: String(draft.cover_image_url ?? "").trim() || null,
+      sort_order: Number(draft.sort_order || 0),
+      is_sample: Boolean(draft.is_sample),
+    };
+
+    try {
+      if (editingId === null) {
+        await createAdminStory(payload);
+        setNotice("Story saved as a draft. Approve it when it is ready to publish.");
+        if (filter === "all") reload();
+        else {
+          setLoading(true);
+          setFilter("all");
+        }
+      } else {
+        await updateAdminStory(editingId, payload);
+        setNotice("Story content saved. Its moderation status did not change.");
+        reload();
+      }
+
+      setEditorOpen(false);
+      setEditingId(null);
+      setDraft(null);
+    } catch (reason) {
+      setFormError(reason instanceof Error ? reason.message : "Unable to save this story.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const filters: Array<{ id: StoryStatusFilter; label: string }> = [
+    { id: "pending", label: "Pending" },
+    { id: "approved", label: "Approved" },
+    { id: "rejected", label: "Rejected" },
+    { id: "draft", label: "Draft" },
+    { id: "all", label: "All" },
+  ];
+
+  const actionsDisabled = busyId !== null;
+
+  return (
+    <AdminCard
+      title="Stories & submissions"
+      description="Review reader submissions, approve or reject them, and keep the Notes from the Bandstand editor for admin-authored stories."
+      actions={
+        <>
+          <button type="button" className={primaryButton} onClick={openNew}>
+            New story
+          </button>
+          <button type="button" className={secondaryButton} onClick={reload} disabled={loading}>
+            {loading ? "Refreshing…" : "Refresh"}
+          </button>
+        </>
+      }
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-paper px-4 py-3">
+        <p className="text-sm text-body">
+          <strong className="font-serif text-lg font-semibold text-ink">{counts.pending}</strong>{" "}
+          {counts.pending === 1 ? "submission" : "submissions"} waiting for review.
+        </p>
+        <div
+          className="flex flex-wrap gap-1.5"
+          role="group"
+          aria-label="Filter stories by moderation status"
+        >
+          {filters.map((entry) => (
+            <button
+              key={entry.id}
+              type="button"
+              aria-pressed={filter === entry.id}
+              onClick={() => changeFilter(entry.id)}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-bright ${
+                filter === entry.id
+                  ? "border-brass/40 bg-brass-bright text-night-950"
+                  : "border-line bg-surface text-muted hover:border-brass/40 hover:text-brass"
+              }`}
+            >
+              {entry.label}
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[0.6rem] ${
+                  filter === entry.id ? "bg-night-950/15" : "bg-paper-2 text-muted"
+                }`}
+              >
+                {counts[entry.id]}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {notice && (
+        <div
+          ref={noticeRef}
+          tabIndex={-1}
+          className="mt-4 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-bright"
+        >
+          <AdminNotice>{notice}</AdminNotice>
+        </div>
       )}
-      publicHref={(record) => (record.is_published ? `/stories/${record.slug}` : null)}
-    />
+      {error && (
+        <div className="mt-4">
+          <AdminNotice tone="error">{error}</AdminNotice>
+        </div>
+      )}
+
+      {editorOpen && draft && (
+        <div className="mt-5">
+          <p className="mb-3 text-xs text-muted">
+            {editingId === null
+              ? "New stories start as drafts. Use Approve in the list when the story is ready to publish."
+              : "Editing content does not change the story's moderation status."}
+          </p>
+          <RecordForm
+            fields={storyEditorFields}
+            draft={draft}
+            onChange={(name, value) =>
+              setDraft((current) => (current ? { ...current, [name]: value } : current))
+            }
+            onSubmit={save}
+            onCancel={cancelEditor}
+            busy={saving}
+            error={formError}
+            heading={editingId === null ? "New story" : "Edit story"}
+          />
+        </div>
+      )}
+
+      <div className="mt-5 space-y-2.5">
+        {loading && stories.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-line bg-paper p-6 text-sm text-muted">
+            Loading submissions…
+          </p>
+        ) : stories.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-line bg-paper p-8 text-center">
+            <IconMusic className="mx-auto size-7 text-brass" />
+            <p className="mt-2 font-serif text-lg font-semibold text-ink">
+              {filter === "pending"
+                ? "The moderation queue is clear"
+                : "No stories match this filter"}
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              {filter === "pending"
+                ? "New reader submissions will appear here for review."
+                : "Try another status filter or create a story."}
+            </p>
+          </div>
+        ) : (
+          stories.map((story) => {
+            const canApprove = canApproveStory(story.status);
+            const canReject = canRejectStory(story.status);
+            const canReopen = canReopenStory(story.status);
+
+            return (
+              <article key={story.id} className="rounded-2xl border border-line bg-paper p-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-serif text-lg font-semibold text-ink">{story.title}</h3>
+                      <StoryStatusBadge status={story.status} />
+                      <span className="rounded-full border border-line bg-surface px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-muted">
+                        {getCategoryLabel(story.category)}
+                      </span>
+                      {story.reference_code && (
+                        <span
+                          className="font-mono text-[0.65rem] text-muted"
+                          title="Reference code"
+                        >
+                          {story.reference_code}
+                        </span>
+                      )}
+                      {story.is_featured && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-brass-bright/40 bg-amber-400/20 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-amber-500 dark:text-amber-300">
+                          <IconSparkle className="size-2.5" />
+                          Featured
+                        </span>
+                      )}
+                      {story.is_sample && (
+                        <span className="rounded-full border border-line bg-surface px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-muted">
+                          Sample
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 break-words text-xs text-muted">
+                      {story.author_name || "Unknown author"}
+                      {story.author_email ? ` · ${story.author_email}` : ""} · Submitted{" "}
+                      {submittedAt(story.created_at)}
+                    </p>
+                    <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-body">
+                      {story.excerpt || story.body}
+                    </p>
+                    {story.cover_image_url && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <img
+                          src={story.cover_image_url}
+                          alt=""
+                          className="h-9 w-14 rounded-lg border border-line object-cover"
+                        />
+                        <span className="text-xs text-muted">Cover photo linked</span>
+                      </div>
+                    )}
+                    {story.rejection_reason && (
+                      <p className="mt-2 text-xs leading-relaxed text-plume">
+                        <strong className="font-bold">
+                          {story.status === "rejected"
+                            ? "Rejection reason:"
+                            : "Previous rejection reason:"}
+                        </strong>{" "}
+                        {story.rejection_reason}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5 lg:max-w-xs lg:justify-end">
+                    <button
+                      type="button"
+                      className={smallButton}
+                      onClick={() => setPreviewStory(story)}
+                      aria-label={`Preview ${story.title}`}
+                    >
+                      Preview
+                    </button>
+                    {story.status === "approved" && (
+                      <>
+                        <Link
+                          to={`/stories/${story.slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={smallButton}
+                          aria-label={`View public story ${story.title}`}
+                        >
+                          View public
+                        </Link>
+                        {story.is_featured ? (
+                          <button
+                            type="button"
+                            className={smallButton}
+                            onClick={() => unfeature(story)}
+                            disabled={actionsDisabled}
+                            aria-label={`Unfeature ${story.title}`}
+                          >
+                            {busyId === story.id ? "Working…" : "Unfeature"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={smallButton}
+                            onClick={() => feature(story)}
+                            disabled={actionsDisabled}
+                            aria-label={`Feature ${story.title}`}
+                          >
+                            {busyId === story.id ? "Working…" : "Feature"}
+                          </button>
+                        )}
+                      </>
+                    )}
+                    {canApprove && (
+                      <button
+                        type="button"
+                        className={smallPrimaryButton}
+                        onClick={() => approve(story)}
+                        disabled={actionsDisabled}
+                        aria-label={`Approve ${story.title}`}
+                      >
+                        {busyId === story.id ? "Working…" : "Approve"}
+                      </button>
+                    )}
+                    {canReject && (
+                      <button
+                        type="button"
+                        className={dangerButton}
+                        onClick={() => setRejectStory(story)}
+                        disabled={actionsDisabled}
+                        aria-label={`Reject ${story.title}`}
+                      >
+                        Reject
+                      </button>
+                    )}
+                    {canReopen && (
+                      <button
+                        type="button"
+                        className={smallButton}
+                        onClick={() => reopen(story)}
+                        disabled={actionsDisabled}
+                        aria-label={`Reopen ${story.title}`}
+                      >
+                        Reopen
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className={smallButton}
+                      onClick={() => startEdit(story)}
+                      disabled={actionsDisabled}
+                      aria-label={`Edit ${story.title}`}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className={dangerButton}
+                      onClick={() => remove(story)}
+                      disabled={actionsDisabled}
+                      aria-label={`Delete ${story.title}`}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })
+        )}
+      </div>
+
+      {previewStory && (
+        <StoryPreviewDialog story={previewStory} onClose={() => setPreviewStory(null)} />
+      )}
+      {rejectStory && (
+        <RejectStoryDialog
+          story={rejectStory}
+          onClose={() => setRejectStory(null)}
+          onRejected={(reason) => reject(rejectStory, reason)}
+        />
+      )}
+    </AdminCard>
   );
 }
 
@@ -1434,6 +2330,7 @@ function Overview({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
         const result = results[index];
         if (result.status !== "fulfilled") return "—";
         if (index < 2) return (result.value as AdminPageContent).sections.length;
+        if (index === 4) return (result.value as { stories: AdminStory[] }).stories.length;
         if (index === 5) return Object.keys(result.value as Record<string, string>).length;
         return (result.value as unknown[]).length;
       };

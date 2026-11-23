@@ -4,6 +4,7 @@ import { PageError, PageLoading } from "../components/cms/PageState";
 import { IconArrowLeft, IconMusic, IconSparkle } from "../components/Icons";
 import { fetchStoryBySlug } from "../lib/api";
 import { paragraphs } from "../lib/section";
+import { getCategoryLabel } from "../lib/storySubmission";
 import { usePageContent } from "../lib/usePageContent";
 import { usePageMeta } from "../lib/usePageTitle";
 import type { Story } from "../types/Story";
@@ -46,6 +47,15 @@ function StoryArticle({ story }: { story: Story }) {
               <IconSparkle className="size-3.5" />
               Notes from the Bandstand
             </span>
+            <span className="rounded-full border border-stage-line-strong bg-stage-glass-strong px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-tile-fg">
+              {getCategoryLabel(story.category)}
+            </span>
+            {story.is_featured && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-brass-bright/40 bg-amber-400/20 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-amber-300">
+                <IconSparkle className="size-3" />
+                Featured story
+              </span>
+            )}
             {story.is_sample && (
               <span className="rounded-full border border-brass/35 bg-brass/10 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-widest text-brass">
                 Sample story

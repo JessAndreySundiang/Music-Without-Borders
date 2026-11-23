@@ -5,6 +5,10 @@ import {
   fetchPerformanceById,
   fetchPerformances,
   fetchSiteSettings,
+  fetchStories,
+  fetchStoryStatus,
+  StorySubmissionError,
+  submitStory,
 } from "./api";
 
 const mockPerformances = [
@@ -149,6 +153,129 @@ describe("api client", () => {
     expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining("/settings"),
       expect.objectContaining({ headers: { Accept: "application/json" } }),
+    );
+  });
+
+  it("submitStory posts the public payload and returns the review message", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({ message: "Thank you. Your story was received." }),
+    } as unknown as Response);
+
+    const input = {
+      title: "A Saturday at the Plaza",
+      author_name: "Mara Dela Cruz",
+      author_email: "mara@example.com",
+      body: "A story body.",
+      consent: true,
+      website: "",
+    };
+
+    await expect(submitStory(input)).resolves.toEqual({
+      message: "Thank you. Your story was received.",
+    });
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/stories/submissions"),
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify(input),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }),
+    );
+  });
+
+  it("submitStory surfaces validation errors without dropping them", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      json: async () => ({
+        message: "The given data was invalid.",
+        errors: { body: ["The body field is required."] },
+      }),
+    } as unknown as Response);
+
+    await expect(
+      submitStory({
+        title: "A Saturday at the Plaza",
+        author_name: "Mara Dela Cruz",
+        author_email: "mara@example.com",
+        body: "",
+        consent: true,
+      }),
+    ).rejects.toMatchObject({
+      name: "StorySubmissionError",
+      status: 422,
+      errors: { body: ["The body field is required."] },
+    } satisfies Partial<StorySubmissionError>);
+  });
+
+  it("submitStory sends optional cover_image_url in the payload", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({ message: "Thank you. Your story was received." }),
+    } as unknown as Response);
+
+    const input = {
+      title: "A Saturday at the Plaza",
+      author_name: "Mara Dela Cruz",
+      author_email: "mara@example.com",
+      body: "A story body.",
+      cover_image_url: "https://example.com/cover.jpg",
+      consent: true,
+    };
+
+    await expect(submitStory(input)).resolves.toEqual({
+      message: "Thank you. Your story was received.",
+    });
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/stories/submissions"),
+      expect.objectContaining({
+        body: JSON.stringify(input),
+      }),
+    );
+  });
+
+  it("fetchStories appends category query param when provided", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ data: [] }),
+    } as unknown as Response);
+
+    await fetchStories("concert");
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/stories?category=concert"),
+      expect.anything(),
+    );
+  });
+
+  it("fetchStoryStatus queries the public status endpoint", async () => {
+    const statusData = {
+      reference_code: "MWB-12345678",
+      title: "Plaza Story",
+      status: "pending",
+      category: "community",
+      submitted_at: "2026-11-20T10:00:00+08:00",
+      published_at: null,
+      rejection_reason: null,
+    };
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ data: statusData }),
+    } as unknown as Response);
+
+    const result = await fetchStoryStatus("MWB-12345678");
+    expect(result).toEqual(statusData);
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/stories/status/MWB-12345678"),
+      expect.anything(),
     );
   });
 });

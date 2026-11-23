@@ -43,6 +43,7 @@ backend/vendor/
 backend/.env
 backend/.env.backup
 backend/.env.production
+backend/database/*.sqlite
 backend/storage/*.key
 backend/storage/framework/cache/*
 backend/storage/framework/sessions/*

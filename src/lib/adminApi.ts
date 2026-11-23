@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "./api";
+import { countStoriesByStatus } from "./storyModeration";
 import type {
   AdminLoginResponse,
   AdminMeResponse,
@@ -6,6 +7,7 @@ import type {
   AdminPerformance,
   AdminSettingsResponse,
   AdminStory,
+  AdminStoryListResponse,
   AdminTestimonial,
   AdminUser,
   ItemUpdate,
@@ -13,6 +15,8 @@ import type {
   PerformanceDraft,
   SectionUpdate,
   StoryDraft,
+  StoryStatusCounts,
+  StoryStatusFilter,
   TestimonialDraft,
 } from "../types/Admin";
 
@@ -241,8 +245,51 @@ export async function deleteAdminTestimonial(id: number): Promise<void> {
   await adminRequest(`/admin/testimonials/${id}`, { method: "DELETE" });
 }
 
-export async function fetchAdminStories(): Promise<AdminStory[]> {
-  const response = await adminRequest<{ data: AdminStory[] }>("/admin/stories");
+export async function fetchAdminStories(
+  status: StoryStatusFilter = "all",
+): Promise<{ stories: AdminStory[]; counts: StoryStatusCounts }> {
+  const query = status === "all" ? "" : `?status=${encodeURIComponent(status)}`;
+  const response = await adminRequest<AdminStoryListResponse>(`/admin/stories${query}`);
+
+  return {
+    stories: response.data,
+    counts: response.meta?.counts ?? countStoriesByStatus(response.data),
+  };
+}
+
+export async function approveAdminStory(id: number): Promise<AdminStory> {
+  const response = await adminRequest<{ data: AdminStory }>(`/admin/stories/${id}/approve`, {
+    method: "POST",
+  });
+  return response.data;
+}
+
+export async function rejectAdminStory(id: number, rejectionReason: string): Promise<AdminStory> {
+  const response = await adminRequest<{ data: AdminStory }>(`/admin/stories/${id}/reject`, {
+    method: "POST",
+    body: { rejection_reason: rejectionReason },
+  });
+  return response.data;
+}
+
+export async function reopenAdminStory(id: number): Promise<AdminStory> {
+  const response = await adminRequest<{ data: AdminStory }>(`/admin/stories/${id}/reopen`, {
+    method: "POST",
+  });
+  return response.data;
+}
+
+export async function featureAdminStory(id: number): Promise<AdminStory> {
+  const response = await adminRequest<{ data: AdminStory }>(`/admin/stories/${id}/feature`, {
+    method: "POST",
+  });
+  return response.data;
+}
+
+export async function unfeatureAdminStory(id: number): Promise<AdminStory> {
+  const response = await adminRequest<{ data: AdminStory }>(`/admin/stories/${id}/unfeature`, {
+    method: "POST",
+  });
   return response.data;
 }
 

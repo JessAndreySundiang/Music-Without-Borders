@@ -16,6 +16,7 @@ const IndexPage = lazy(() => import("./pages/IndexPage"));
 const DetailPage = lazy(() => import("./pages/DetailPage"));
 const Stories = lazy(() => import("./pages/Stories"));
 const StoryDetail = lazy(() => import("./pages/StoryDetail"));
+const StorySubmit = lazy(() => import("./pages/StorySubmit"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminLogin = lazy(() =>
   import("./pages/AdminAuth").then((module) => ({ default: module.AdminLoginPage })),
@@ -106,6 +107,7 @@ function App() {
               <Route path="/instruments" element={<Instruments />} />
               <Route path="/about" element={<About />} />
               <Route path="/stories" element={<Stories />} />
+              <Route path="/stories/submit" element={<StorySubmit />} />
               <Route path="/stories/:slug" element={<StoryDetail />} />
               <Route path="/blog" element={<Navigate to="/stories" replace />} />
               <Route path="/donate" element={<Donate />} />

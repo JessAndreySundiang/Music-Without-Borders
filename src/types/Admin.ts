@@ -22,7 +22,59 @@ export interface AdminTestimonial extends CmsTestimonial {
   is_published: boolean;
 }
 
-export type AdminStory = Story;
+export type StoryStatus = "draft" | "pending" | "approved" | "rejected";
+export type StoryStatusFilter = StoryStatus | "all";
+
+export interface StoryStatusCounts {
+  all: number;
+  draft: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+}
+
+export interface StoryModerationEvent {
+  id: number;
+  action: "submitted" | "approved" | "rejected" | "reopened";
+  actor_id: number | null;
+  actor_name: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface AdminStory extends Story {
+  reference_code: string;
+  status: StoryStatus;
+  author_email: string | null;
+  consent_at: string | null;
+  reviewed_by: number | null;
+  reviewer_name: string | null;
+  reviewed_at: string | null;
+  rejection_reason: string | null;
+  events?: StoryModerationEvent[];
+}
+
+export interface AdminStoryListResponse {
+  data: AdminStory[];
+  meta: {
+    counts: StoryStatusCounts;
+  };
+}
+
+export type StoryDraft = Pick<
+  AdminStory,
+  | "title"
+  | "slug"
+  | "category"
+  | "excerpt"
+  | "body"
+  | "author_name"
+  | "author_role"
+  | "cover_image_path"
+  | "cover_image_url"
+  | "sort_order"
+  | "is_sample"
+>;
 
 export interface SectionUpdate {
   eyebrow?: string | null;
@@ -57,10 +109,6 @@ export interface AdminPageContent extends HomePageContent {
 
 export type PerformanceDraft = Omit<AdminPerformance, "id">;
 export type TestimonialDraft = Omit<AdminTestimonial, "id" | "initials" | "image_url">;
-export type StoryDraft = Omit<
-  AdminStory,
-  "id" | "cover_image_url" | "published_at" | "created_at" | "updated_at"
->;
 
 export interface AdminLoginResponse {
   data: AdminSession;

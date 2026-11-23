@@ -114,10 +114,19 @@ soft deletes. The public API only returns visible/published content.
   service refuses to write reset links to a `log` or `array` mailer.
 - Admin sessions use Sanctum bearer tokens and expire after eight hours by default
   (`SANCTUM_EXPIRATION=480`). Admins can edit/reorder/hide Home and About sections and items,
-  manage Settings, and create/edit/soft-delete performances, testimonials, and Stories.
+  manage Settings, create/edit/soft-delete performances, testimonials, and Stories, and moderate
+  reader story submissions.
 - Stories are public at `/stories` and `/stories/:slug`; `/blog` redirects to `/stories`.
-  The three launch Stories were reviewed and approved; they are seeded published and marked
-  non-sample. New drafts remain unpublished until an administrator publishes them.
+  Readers can submit a story at `/stories/submit` with optional category and cover image URL.
+  Each submission receives a unique tracking reference code (`MWB-XXXXXXXX`) that authors can check at
+  `/stories/submit` or `GET /api/stories/status/{code}` without exposing private author details.
+  Stories are categorized into four fixed categories (`community`, `concert`, `rehearsal`, `lending-library`),
+  with instant category filter tabs and story counts on `/stories`.
+  New submissions enter as `pending` and stay private until an admin approves them; rejected stories
+  remain private with a mandatory reviewer reason. Approved stories can optionally be featured on the Stories page.
+  The complete moderation lifecycle, audit trail, email notifications, and demo runbook are documented in
+  [`docs/stories-moderation.md`](docs/stories-moderation.md).
+  The three launch Stories were reviewed and approved, and are seeded as `approved` and non-sample.
 - The Daytime/Evening palette is defined as semantic tokens in `src/index.css`. Colour
   choices are documented in `design-system/music-without-borders/MASTER.md`.
 
@@ -127,6 +136,10 @@ The admin API is grouped under `/api/admin`:
 - `GET /api/admin/home` and `GET /api/admin/about`; section/item edits and reordering use
   the matching `PUT` routes, and settings are saved through `/api/admin/settings`
 - `GET|POST|PUT|DELETE /api/admin/{performances|testimonials|stories}`
+- `POST /api/admin/stories/{story}/approve`, `/reject`, and `/reopen` for moderation
+- `POST /api/admin/stories/{story}/feature` and `/unfeature` to feature or unfeature an approved story
+- `POST /api/stories/submissions` for the public story form (rate-limited, pending by default)
+- `GET /api/stories/status/{code}` for public status lookup by tracking reference code
 - `POST /api/admin/forgot-password` prepares a link; `POST /api/admin/reset-password`
   consumes it once
 
@@ -183,12 +196,17 @@ with the band's real dates before the site is promoted.
    - Sanctum-protected sign-in, session restore, sign-out, and a one-time password reset flow.
    - Home/About section and item editors with visibility toggles and safe reordering.
    - Full create/edit/soft-delete management for performances, testimonials, and Stories.
+   - A moderation queue for reader story submissions with full preview, approve, reject with a
+     required reason, status filters, and pending counts.
    - Settings editor for contact details, navigation, SEO, and public notices.
 8. **Stories (`/stories` / `Stories.tsx`):**
    - "Notes from the Bandstand" index and article pages driven by the public Stories API.
-   - Unpublished drafts stay off the public site; `/blog` redirects to `/stories`.
-   - The three approved launch Stories are seeded published and non-sample; new drafts are never
-     published automatically.
+   - Public submissions at `/stories/submit` with honeypot spam protection, rate limiting, and author privacy.
+   - Unique reference codes (`MWB-XXXXXXXX`) returned to authors to track review status without exposing private data.
+   - Fixed story categories with instant category filter tabs and real-time counts on `/stories`.
+   - Unpublished drafts and pending/rejected submissions stay off the public site; `/blog` redirects to `/stories`.
+   - Admin moderation queue with full previews, approval, rejection reasons, audit trail, and featured story highlight.
+   - The three approved launch Stories are seeded approved and non-sample. See [`docs/stories-moderation.md`](docs/stories-moderation.md) for full operational documentation.
 
 ---
 
@@ -283,6 +301,7 @@ The Laravel CMS also reads:
 | `ADMIN_NAME` | `backend/.env` | Display name for the administrator account |
 | `ADMIN_RESET_DELIVERY` | `backend/.env` | `file` for local/private-file delivery, `mail` to send reset links through the configured mailer |
 | `FORCE_HTTPS` | `backend/.env` | Set `true` when TLS terminates at a proxy and Laravel sees HTTP on the backend hop |
+| `STORY_ADMIN_EMAIL` | `backend/.env` | Optional notification recipient for new story submissions. Defaults to `ADMIN_EMAIL` |
 | `MAIL_MAILER` / `BREVO_API_KEY` / `MAIL_FROM_ADDRESS` | `backend/.env` | Use `MAIL_MAILER=brevo` with a Brevo API v3 key in staging/production. SMTP (`MAIL_HOST` etc.) is a local fallback only |
 
 `php artisan admin:setup-link` creates the account if it is missing, but it never prints a

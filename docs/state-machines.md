@@ -86,7 +86,7 @@ delivered. Use `npm run check-mail` in `server/` for a real transport check.
 | API-01 | Admin token lifecycle (`AdminAuthController`, Sanctum) | absent, active, expired, revoked | 8-hour expiration (`SANCTUM_EXPIRATION=480`); logout revokes the current token; password reset revokes all tokens; bearer token in browser storage |
 | API-02 | Password reset link (`AdminPasswordResetService`) | issued, delivered-by-mail, delivered-to-file, validated, consumed, expired, superseded | Raw token never stored; SHA-256 hash + HMAC signature; 60 minutes; single use; mail failure falls back to private storage |
 | API-03 | Admin authorization (`admin` middleware) | allowed, unauthenticated, forbidden | `auth:sanctum` + `is_admin`; 401/403 JSON |
-| API-04 | Story publication (`Story`) | draft, published, sample-published, soft-deleted | `is_published`, `is_sample`, `published_at`; public scope is `is_published=true`; unpublishing clears `published_at`, republishing sets it to now; slugs are unique including trashed rows |
+| API-04 | Story publication (`Story`) | draft, pending, approved, rejected, soft-deleted | Single `status` source of truth; `published_at` is set on approval and cleared on rejection; public reads use `approved()` only; slugs are unique including trashed rows |
 | API-05 | CMS visibility/order (`PageContentController`) | visible/hidden, ordered, reordered | `is_visible` filters public output; `sort_order` is 1-based and rewritten from the posted id array; reorder is not wrapped in a transaction and is not scoped per section for items |
 | API-06 | PaymentIntent creation (`POST /create-payment-intent`) | valid, invalid, rate-limited, Stripe-error, created | In-memory fixed-window rate limiter (30/min per IP by default); optional `Idempotency-Key`; Stripe errors become 502 |
 | API-07 | Stripe webhook (`POST /stripe-webhook`) | unconfigured, bad-signature, ignored-event, recorded, duplicate, record-failed, alert-queued | Raw body before JSON; only `payment_intent.succeeded` is handled; record failure returns 500 so Stripe retries; alert failure never fails the webhook |
@@ -205,24 +205,34 @@ Validation order is part of the contract:
 Only then is the password updated, every token revoked, and the reset row
 deleted. Never log the raw link; only the exception class is logged.
 
-### 3.5 Story publication (API-04)
+### 3.5 Story publication and moderation (API-04)
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Draft: created unpublished
-    Draft --> Published: is_published=true (published_at=now)
-    Published --> Draft: is_published=false (published_at=null)
-    Published --> Published: edit copy/slug (published_at preserved)
+    [*] --> Draft: admin creates content
+    [*] --> Pending: reader submits a story
+    Draft --> Approved: admin approves (published_at=now, reviewer set)
+    Pending --> Approved: admin approves (published_at=now, reviewer set)
+    Pending --> Rejected: admin rejects with a required reason
+    Rejected --> Pending: admin reopens
+    Approved --> Approved: edit copy/slug (published_at preserved)
     Draft --> SoftDeleted: delete
-    Published --> SoftDeleted: delete
+    Pending --> SoftDeleted: delete
+    Approved --> SoftDeleted: delete
+    Rejected --> SoftDeleted: delete
     SoftDeleted --> [*]: hidden from public and admin lists
-    note right of Published
+    note right of Approved
+      Only `approved` stories are public.
       `is_sample` is a release flag, not a public state.
-      The three approved launch stories have `is_sample=false`.
     end note
 ```
 
-Public read endpoints must only use `published()`; admin reads may see drafts.
+Public read endpoints must only use `approved()`; admin reads may see every status.
+Pending, rejected, and draft stories return 404 on the public detail route.
+All moderation actions (submitted, approved, rejected, reopened) are recorded in `story_moderation_events`.
+At most one story can have `is_featured = true` at any time, and only approved stories can be featured.
+Each story has a unique immutable reference tracking code (`MWB-` + 8 uppercase alphanumeric characters). Authors track submission status via `GET /api/stories/status/{code}`, which returns strictly non-sensitive review state (`reference_code`, `title`, `status`, `category`, timestamps, and polite rejection reason only if rejected), with zero author email, story body, reviewer identity, or audit events exposed.
+Each story belongs to one of four fixed categories (`community`, `concert`, `rehearsal`, `lending-library`). The public endpoint supports optional `?category=` filtering, and the frontend `/stories` directory provides instant category tabs with live story counts.
 Slug uniqueness includes soft-deleted rows, so a deleted slug cannot be reused.
 
 ### 3.6 Donation pipeline (API-06 → API-09)
