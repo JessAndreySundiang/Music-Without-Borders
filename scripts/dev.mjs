@@ -6,7 +6,12 @@
 import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { isPlaceholderStripeSecret, readEnvValue, runBootstrap } from "./bootstrap.mjs";
+import {
+  isPlaceholderStripeSecret,
+  readEnvValue,
+  resolveDbModeFromArgs,
+  runBootstrap,
+} from "./bootstrap.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const backendDir = path.join(root, "backend");
@@ -43,7 +48,11 @@ function findStripeCli() {
 
 let bootstrapResult;
 try {
-  bootstrapResult = runBootstrap({ rootDir: root, postinstall: false });
+  bootstrapResult = runBootstrap({
+    rootDir: root,
+    postinstall: false,
+    dbMode: resolveDbModeFromArgs(process.argv),
+  });
 } catch (error) {
   console.error(`[setup] ${error instanceof Error ? error.message : String(error)}`);
   process.exit(1);

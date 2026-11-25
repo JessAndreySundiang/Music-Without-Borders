@@ -7,6 +7,8 @@ use App\Models\Performance;
 use App\Models\Story;
 use App\Models\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use PDO;
 use Throwable;
 
 class LocalBootstrap extends Command
@@ -35,6 +37,15 @@ class LocalBootstrap extends Command
                     @touch($database);
                 }
             }
+        } elseif (config('database.default') === 'mysql') {
+            try {
+                $this->ensureMysqlDatabaseExists();
+            } catch (Throwable $exception) {
+                $this->error("Database connection 'mysql' is not ready: {$exception->getMessage()}");
+                $this->line('Ensure MySQL/XAMPP is running, or run `npm run dev:sqlite` to use SQLite instead.');
+
+                return self::FAILURE;
+            }
         }
 
         try {
@@ -61,5 +72,48 @@ class LocalBootstrap extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Quotes a MySQL identifier safely using backticks for DDL statements.
+     */
+    public static function quoteMysqlIdentifier(string $identifier): string
+    {
+        return '`'.str_replace('`', '``', $identifier).'`';
+    }
+
+    private function ensureMysqlDatabaseExists(): void
+    {
+        $config = config('database.connections.mysql', []);
+        $database = trim((string) ($config['database'] ?? ''));
+        if ($database === '') {
+            return;
+        }
+
+        $host = (string) ($config['host'] ?? '127.0.0.1');
+        $port = (string) ($config['port'] ?? '3306');
+        $socket = (string) ($config['unix_socket'] ?? '');
+        $username = (string) ($config['username'] ?? 'root');
+        $password = (string) ($config['password'] ?? '');
+        $charset = (string) ($config['charset'] ?? 'utf8mb4');
+        $collation = (string) ($config['collation'] ?? 'utf8mb4_unicode_ci');
+
+        $dsn = $socket !== ''
+            ? "mysql:unix_socket={$socket}"
+            : "mysql:host={$host};port={$port}";
+
+        $pdo = new PDO($dsn, $username, $password, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_TIMEOUT => 2,
+        ]);
+
+        $safeCharset = preg_replace('/[^a-zA-Z0-9_]/', '', $charset) ?: 'utf8mb4';
+        $safeCollation = preg_replace('/[^a-zA-Z0-9_]/', '', $collation) ?: 'utf8mb4_unicode_ci';
+        $quotedDb = self::quoteMysqlIdentifier($database);
+
+        $pdo->exec("CREATE DATABASE IF NOT EXISTS {$quotedDb} CHARACTER SET {$safeCharset} COLLATE {$safeCollation}");
+        $pdo = null;
+
+        DB::purge('mysql');
     }
 }

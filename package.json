@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "setup": "node scripts/bootstrap.mjs",
+    "save-local": "node scripts/bootstrap.mjs --save-local",
     "postinstall": "node scripts/bootstrap.mjs --postinstall",
     "dev": "node scripts/dev.mjs",
+    "dev:mysql": "node scripts/dev.mjs --mysql",
+    "dev:sqlite": "node scripts/dev.mjs --sqlite",
     "dev:web": "vite",
     "dev:api": "node server/server.js",
     "build": "tsc -b && vite build",

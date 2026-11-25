@@ -56,14 +56,15 @@ npm run dev
 
 On first run, `npm run dev` automatically:
 1. Installs missing `server/` (Express) and `backend/` (Composer) dependencies if needed.
-2. Creates `.env`, `server/.env`, and `backend/.env` (configured for local SQLite at `backend/database/database.sqlite` unless you already configured MySQL).
-3. Generates Laravel's `APP_KEY`, runs migrations, and seeds initial CMS sections, performances, testimonials, and stories.
+2. Creates `.env`, `server/.env`, and `backend/.env` — using **XAMPP/MySQL** automatically when `127.0.0.1:3306` is reachable, or isolated **SQLite** (`backend/database/database.sqlite`) otherwise, plus any saved machine-local overrides in `~/.mwb-local.env`.
+3. Generates Laravel's `APP_KEY`, creates `community_band_db` (for MySQL) or `database.sqlite` (for SQLite), runs migrations, and seeds initial CMS sections, performances, testimonials, and stories.
 4. Creates the local admin account (`Communitymusicband@gmail.com`) and saves a one-time password setup link to `backend/storage/app/private/admin-reset-link.txt`.
 5. Starts the React frontend (`http://localhost:5173`), Laravel CMS API (`http://127.0.0.1:8000`), and Donation API (`http://localhost:4242`) together.
 
-> **Optional — Custom MySQL or Stripe Keys:**
-> - **MySQL:** If you prefer XAMPP/MySQL instead of SQLite, edit `backend/.env` before running `npm run dev` (keep `DB_CONNECTION=mysql` and create your database).
-> - **Stripe Checkout:** Paste real test keys from <https://dashboard.stripe.com/test/apikeys> into `.env` (`VITE_STRIPE_PUBLISHABLE_KEY`) and `server/.env` (`STRIPE_SECRET_KEY`), then restart `npm run dev`. Public pages and the CMS work without Stripe keys.
+> **Optional — Persisting Stripe Keys & MySQL Across Future Clones:**
+> - **Save once on your machine:** After pasting your Stripe test keys (`VITE_STRIPE_PUBLISHABLE_KEY` / `STRIPE_SECRET_KEY`) or choosing MySQL/mail settings locally, run `npm run save-local`. This writes your non-secret & local secret overrides outside Git to `~/.mwb-local.env` so every future GitHub download applies them automatically when you run `npm run dev` (never committed to GitHub).
+> - **Switch database anytime:** Use `npm run dev:mysql` (creates `community_band_db` automatically when XAMPP MySQL is started) or `npm run dev:sqlite`.
+> - **Stripe Checkout:** Public pages and the CMS work without Stripe keys. For card checkout tests, add matching test keys from <https://dashboard.stripe.com/test/apikeys>.
 
 ---
 
@@ -221,7 +222,10 @@ Test cards (e.g. `4242 4242 4242 4242`) only work in test mode.
 | Command | What it does |
 | --- | --- |
 | `npm run setup` | Manually run the idempotent workspace/DB bootstrap without starting servers |
+| `npm run save-local` | Save your local Stripe/MySQL/mail `.env` overrides outside Git (`~/.mwb-local.env`) for future clones |
 | `npm run dev` | Bootstrap + Vite (web), Laravel CMS API, donation API, **and** Stripe CLI forwarder together |
+| `npm run dev:mysql` | Switch to XAMPP/MySQL, create `community_band_db` if missing, and start dev servers |
+| `npm run dev:sqlite` | Switch to local SQLite (`backend/database/database.sqlite`) and start dev servers |
 | `npm run dev:web` | Vite only |
 | `npm run dev:api` | Donation API only |
 | `npm run build` | Type-check (`tsc -b`) and build for production |

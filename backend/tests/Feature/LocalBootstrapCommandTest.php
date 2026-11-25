@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Console\Commands\LocalBootstrap;
 use App\Models\HomeSection;
 use App\Models\Performance;
 use App\Models\Story;
 use App\Models\User;
 use App\Services\AdminPasswordResetService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -60,5 +62,29 @@ class LocalBootstrapCommandTest extends TestCase
         $this->app->detectEnvironment(fn () => 'production');
 
         $this->artisan('local:bootstrap')->assertFailed();
+    }
+
+    public function test_local_bootstrap_quotes_mysql_identifiers_and_reports_unreachable_mysql(): void
+    {
+        $this->assertSame('`community_band_db`', LocalBootstrap::quoteMysqlIdentifier('community_band_db'));
+        $this->assertSame('`bad``name`', LocalBootstrap::quoteMysqlIdentifier('bad`name'));
+
+        $previousDefault = config('database.default');
+        $previousHost = config('database.connections.mysql.host');
+        $previousPort = config('database.connections.mysql.port');
+
+        try {
+            Config::set('database.default', 'mysql');
+            Config::set('database.connections.mysql.host', '127.0.0.1');
+            Config::set('database.connections.mysql.port', 65432);
+
+            $this->artisan('local:bootstrap')
+                ->expectsOutputToContain("Database connection 'mysql' is not ready")
+                ->assertFailed();
+        } finally {
+            Config::set('database.connections.mysql.host', $previousHost);
+            Config::set('database.connections.mysql.port', $previousPort);
+            Config::set('database.default', $previousDefault);
+        }
     }
 }
