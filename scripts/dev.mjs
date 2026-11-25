@@ -1,28 +1,58 @@
-// Runs the Vite dev server (web), the Stripe donation API, and the Stripe CLI
-// forwarder together, so the donate form always has something listening on
-// http://localhost:4242 AND a completed donation can actually reach the API.
+// Runs the Vite dev server (web), the Laravel CMS API (cms), the Stripe
+// donation API (api), and optionally the Stripe CLI forwarder together after
+// bootstrapping missing dependencies, .env files, and local SQLite setup.
 //
 // Usage: npm run dev
 import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isPlaceholderStripeSecret, readEnvValue, runBootstrap } from "./bootstrap.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const backendDir = path.join(root, "backend");
+const isWindows = process.platform === "win32";
 
 /**
- * Locates the Stripe CLI, using the same plain spawn that starts it below so a
- * successful probe really does mean a successful start. Returns null when the
- * CLI is not installed, because the site, the API and the donate form all work
- * without it — only recording a donation and emailing the band need it.
+ * Probes an HTTP health endpoint so already-running background services are
+ * reused cleanly instead of failing on EADDRINUSE.
+ */
+async function isHealthy(url) {
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(800) });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Locates the Stripe CLI, returning null when absent so the site, CMS, and
+ * unconfigured donate page all still work smoothly.
  */
 function findStripeCli() {
   try {
-    const probe = spawnSync("stripe", ["--version"], { encoding: "utf8" });
+    const probe = spawnSync("stripe --version", {
+      encoding: "utf8",
+      shell: true,
+    });
     return probe.status === 0 ? "stripe" : null;
   } catch {
     return null;
   }
 }
+
+let bootstrapResult;
+try {
+  bootstrapResult = runBootstrap({ rootDir: root, postinstall: false });
+} catch (error) {
+  console.error(`[setup] ${error instanceof Error ? error.message : String(error)}`);
+  process.exit(1);
+}
+
+const [cmsAlreadyUp, apiAlreadyUp] = await Promise.all([
+  isHealthy("http://127.0.0.1:8000/api/health"),
+  isHealthy("http://127.0.0.1:4242/health"),
+]);
 
 const targets = [
   {
@@ -30,37 +60,60 @@ const targets = [
     color: "\x1b[36m",
     command: process.execPath,
     args: ["node_modules/vite/bin/vite.js"],
+    cwd: root,
   },
-  { label: "api", color: "\x1b[35m", command: process.execPath, args: ["server/server.js"] },
 ];
 
-const stripeCli = findStripeCli();
-
-if (stripeCli) {
-  // Stripe never calls the API directly in development: the CLI forwards each
-  // event. Without this a donation succeeds at Stripe, but the API never hears
-  // about it, so nothing is recorded and the band gets no email.
-  targets.push({
-    label: "stripe",
-    color: "\x1b[33m",
-    command: stripeCli,
-    args: [
-      "listen",
-      "--forward-to",
-      "localhost:4242/stripe-webhook",
-      "--events",
-      "payment_intent.succeeded",
-    ],
-    // A missing login or an expired CLI must not take the whole dev run down.
-    optional: true,
-  });
+if (apiAlreadyUp) {
+  console.log("\x1b[35m[api]\x1b[0m Donation API already running at http://localhost:4242");
 } else {
-  const prefix = "\x1b[33m[stripe]\x1b[0m";
-  console.log(`${prefix} The Stripe CLI was not found, so donations will not be recorded`);
-  console.log(`${prefix} and no donation email will be sent. Install it, then restart:`);
+  targets.push({
+    label: "api",
+    color: "\x1b[35m",
+    command: process.execPath,
+    args: ["server/server.js"],
+    cwd: root,
+  });
+}
+
+if (cmsAlreadyUp) {
+  console.log("\x1b[32m[cms]\x1b[0m Laravel CMS API already running at http://127.0.0.1:8000");
+} else if (bootstrapResult.backendReady && bootstrapResult.phpCmd) {
+  targets.push({
+    label: "cms",
+    color: "\x1b[32m",
+    command: bootstrapResult.phpCmd,
+    args: ["artisan", "serve", "--host=127.0.0.1", "--port=8000"],
+    cwd: backendDir,
+  });
+}
+
+const serverStripeSecret = readEnvValue(path.join(root, "server", ".env"), "STRIPE_SECRET_KEY");
+if (isPlaceholderStripeSecret(serverStripeSecret)) {
   console.log(
-    `${prefix}   stripe listen --forward-to localhost:4242/stripe-webhook --events payment_intent.succeeded`,
+    "\x1b[33m[stripe]\x1b[0m Using placeholder Stripe keys — public site & CMS work normally; " +
+      "add test keys in .env and server/.env to test card checkout.",
   );
+} else {
+  const stripeCli = findStripeCli();
+  if (stripeCli) {
+    targets.push({
+      label: "stripe",
+      color: "\x1b[33m",
+      command:
+        "stripe listen --forward-to localhost:4242/stripe-webhook --events payment_intent.succeeded",
+      args: undefined,
+      cwd: root,
+      optional: true,
+    });
+  } else {
+    const prefix = "\x1b[33m[stripe]\x1b[0m";
+    console.log(`${prefix} The Stripe CLI was not found, so donations will not be recorded`);
+    console.log(`${prefix} and no donation email will be sent. Install it, then restart:`);
+    console.log(
+      `${prefix}   stripe listen --forward-to localhost:4242/stripe-webhook --events payment_intent.succeeded`,
+    );
+  }
 }
 
 // Exit code 1 from server/server.js means it rejected its configuration.
@@ -69,15 +122,33 @@ const CONFIG_ERROR = 1;
 const alive = new Set();
 let shuttingDown = false;
 
+function killChildTree(child) {
+  if (!child.pid) return;
+  if (isWindows) {
+    spawnSync("taskkill", ["/PID", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+    return;
+  }
+  child.kill();
+}
+
 function shutdown(code = 0) {
   if (shuttingDown) return;
   shuttingDown = true;
-  for (const child of alive) child.kill();
+  for (const child of alive) killChildTree(child);
   process.exit(code);
 }
 
-for (const { label, color, command, args, optional } of targets) {
-  const child = spawn(command, args, { cwd: root, env: process.env });
+for (const { label, color, command, args, cwd, optional } of targets) {
+  const child = args
+    ? spawn(command, args, {
+        cwd: cwd ?? root,
+        env: process.env,
+      })
+    : spawn(command, {
+        cwd: cwd ?? root,
+        env: process.env,
+        shell: true,
+      });
   alive.add(child);
 
   const prefix = (line) => `${color}[${label}]\x1b[0m ${line}`;
@@ -101,7 +172,6 @@ for (const { label, color, command, args, optional } of targets) {
     alive.delete(child);
 
     // Stopping on purpose (Ctrl+C or a sibling shutting down) is not a failure.
-    // A killed process reports -1, which must not be mistaken for exit code 1.
     if (shuttingDown) return;
 
     if (code === 0) {
@@ -116,6 +186,14 @@ for (const { label, color, command, args, optional } of targets) {
           code === CONFIG_ERROR
             ? "The API could not start: check STRIPE_SECRET_KEY in server/.env (sk_test_... or sk_live_...)."
             : "The donation form will not work until the API is listening on port 4242 again.",
+        ),
+      );
+    }
+
+    if (label === "cms") {
+      console.log(
+        prefix(
+          "The CMS API stopped on port 8000. Public pages may show loading errors until it restarts.",
         ),
       );
     }

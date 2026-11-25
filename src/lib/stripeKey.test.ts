@@ -6,7 +6,15 @@ describe("isUsablePublishableKey", () => {
     expect(isUsablePublishableKey(key)).toBe(true);
   });
 
-  it.each([undefined, "", "sk_test_abc", "pk_abc", "pk_prod_abc"])("rejects %o", (key) => {
+  it.each([
+    undefined,
+    "",
+    "sk_test_abc",
+    "pk_abc",
+    "pk_prod_abc",
+    "pk_test_replace_me",
+    "pk_live_replace_me",
+  ])("rejects %o", (key) => {
     expect(isUsablePublishableKey(key)).toBe(false);
   });
 

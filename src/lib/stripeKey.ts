@@ -7,7 +7,7 @@
  * message on the very day the band starts taking real gifts.
  */
 export function isUsablePublishableKey(key: string | undefined): key is string {
-  return Boolean(key && /^pk_(test|live)_/.test(key));
+  return Boolean(key && /^pk_(test|live)_/.test(key) && !/replace_me/i.test(key));
 }
 
 /** True when the key charges real cards. */

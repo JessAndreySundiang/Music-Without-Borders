@@ -42,41 +42,28 @@ one frontend to maintain and deploy.
 
 ---
 
-## 🚀 Quick Start & Installation (For Video Demo)
+## 🚀 Quick Start & Installation
 
-### 1. Backend Setup (Laravel API — Port 8000)
+**Prerequisites:** Node.js (v20+), PHP (8.2+ with `pdo_sqlite` / `mbstring`), and Composer. No MySQL server setup is required locally—fresh installs auto-configure an isolated SQLite database.
+
 ```bash
-# Navigate to the backend directory
-cd backend
-
-# Install PHP dependencies
-composer install
-
-# Prepare environment file (if not already present)
-cp .env.example .env
-php artisan key:generate
-
-# Execute migrations and seed the CMS content
-php artisan migrate --seed
-
-# Create the administrator account and deliver a one-time setup link
-php artisan admin:setup-link
-
-# Start the Laravel headless REST API
-php artisan serve
-# -> Listening on http://127.0.0.1:8000
-```
-
-### 2. Frontend Setup (React + TypeScript — Port 5173)
-```bash
-# In a new terminal, stay in the project root (the canonical app)
-# Install node dependencies
+# 1. Install dependencies (automatically sets up root, server/, backend/, and local .env files)
 npm install
 
-# Start the Vite development server
+# 2. Start everything in one terminal (Vite on :5173, Laravel CMS on :8000, Donation API on :4242)
 npm run dev
-# -> Local URL: http://localhost:5173/
 ```
+
+On first run, `npm run dev` automatically:
+1. Installs missing `server/` (Express) and `backend/` (Composer) dependencies if needed.
+2. Creates `.env`, `server/.env`, and `backend/.env` (configured for local SQLite at `backend/database/database.sqlite` unless you already configured MySQL).
+3. Generates Laravel's `APP_KEY`, runs migrations, and seeds initial CMS sections, performances, testimonials, and stories.
+4. Creates the local admin account (`Communitymusicband@gmail.com`) and saves a one-time password setup link to `backend/storage/app/private/admin-reset-link.txt`.
+5. Starts the React frontend (`http://localhost:5173`), Laravel CMS API (`http://127.0.0.1:8000`), and Donation API (`http://localhost:4242`) together.
+
+> **Optional — Custom MySQL or Stripe Keys:**
+> - **MySQL:** If you prefer XAMPP/MySQL instead of SQLite, edit `backend/.env` before running `npm run dev` (keep `DB_CONNECTION=mysql` and create your database).
+> - **Stripe Checkout:** Paste real test keys from <https://dashboard.stripe.com/test/apikeys> into `.env` (`VITE_STRIPE_PUBLISHABLE_KEY`) and `server/.env` (`STRIPE_SECRET_KEY`), then restart `npm run dev`. Public pages and the CMS work without Stripe keys.
 
 ---
 
@@ -218,24 +205,23 @@ with the band's real dates before the site is promoted.
 
 ## Getting started
 
+After cloning or downloading from GitHub:
+
 ```bash
 npm install
-cd server && npm install && cd ..   # one-time: installs the donation API deps
-
-cp .env.example .env                # then paste your Stripe *test* publishable key
-cp server/.env.example server/.env  # then paste your Stripe *test* secret key
-
-npm run dev                         # site on :5173, API on :4242
+npm run dev                         # site on :5173, Laravel CMS on :8000, donation API on :4242
 ```
 
-Both keys come from <https://dashboard.stripe.com/test/apikeys>. They must belong to the same
-Stripe account, and test cards (e.g. `4242 4242 4242 4242`) only work in test mode.
+To test Stripe card donations locally, add matching test keys from <https://dashboard.stripe.com/test/apikeys>
+to `.env` (`VITE_STRIPE_PUBLISHABLE_KEY`) and `server/.env` (`STRIPE_SECRET_KEY`), then restart `npm run dev`.
+Test cards (e.g. `4242 4242 4242 4242`) only work in test mode.
 
 ### Commands
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | Vite (web), the donation API, **and** the Stripe CLI forwarder together |
+| `npm run setup` | Manually run the idempotent workspace/DB bootstrap without starting servers |
+| `npm run dev` | Bootstrap + Vite (web), Laravel CMS API, donation API, **and** Stripe CLI forwarder together |
 | `npm run dev:web` | Vite only |
 | `npm run dev:api` | Donation API only |
 | `npm run build` | Type-check (`tsc -b`) and build for production |
